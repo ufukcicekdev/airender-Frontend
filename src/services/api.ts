@@ -1,12 +1,12 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { getBackendOrigin } from "@/lib/backend-url";
 
-/** Browser: same-origin proxy via Next.js rewrites (no CORS). SSR: direct backend URL. */
+/** Browser: same-origin /api proxy (cookies, no CORS). SSR: direct backend URL. */
 function getApiBaseUrl(): string {
   if (typeof window !== "undefined") {
     return "/api";
   }
-  const backend = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-  return `${backend.replace(/\/$/, "")}/api`;
+  return `${getBackendOrigin()}/api`;
 }
 
 export const api = axios.create({
