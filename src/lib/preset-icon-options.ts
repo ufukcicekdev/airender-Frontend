@@ -1,0 +1,22 @@
+/** Icons available when creating a user prompt preset. */
+export const PRESET_ICON_OPTIONS = [
+  { value: "sparkles", label: "Sparkles" },
+  { value: "image", label: "Image" },
+  { value: "video", label: "Video" },
+  { value: "sun", label: "Sun" },
+  { value: "moon", label: "Moon" },
+  { value: "leaf", label: "Leaf" },
+  { value: "snowflake", label: "Snowflake" },
+  { value: "cloud", label: "Cloud" },
+  { value: "cloud-rain", label: "Rain" },
+  { value: "plane", label: "Drone" },
+  { value: "zoom-in", label: "Zoom in" },
+  { value: "zoom-out", label: "Zoom out" },
+  { value: "rotate-3d", label: "Rotate" },
+  { value: "users", label: "People" },
+  { value: "paw-print", label: "Animal" },
+  { value: "car", label: "Car" },
+  { value: "house", label: "Building" },
+  { value: "pen-line", label: "Draw" },
+  { value: "maximize-2", label: "Upscale" },
+] as const;

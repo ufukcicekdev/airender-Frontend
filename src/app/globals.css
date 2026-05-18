@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 7%;
+    --foreground: 210 25% 96%;
+    --card: 220 18% 10%;
+    --card-foreground: 210 25% 96%;
+    --primary: 174 72% 46%;
+    --primary-foreground: 220 25% 6%;
+    --secondary: 220 16% 14%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 220 14% 16%;
+    --muted-foreground: 215 12% 55%;
+    --accent: 174 50% 20%;
+    --accent-foreground: 174 80% 75%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 14% 18%;
+    --input: 220 14% 14%;
+    --ring: 174 72% 46%;
+    --radius: 0.5rem;
+    --canvas: 220 22% 5%;
+    --canvas-grid: 220 14% 11%;
+    --canvas-dots: 215 12% 32%;
+    --node-bg: 220 18% 11%;
+    --node-border: 220 14% 22%;
+    --node-glow: 174 72% 46%;
+    --viz-cyan: 174 72% 46%;
+    --viz-panel: 220 18% 9%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+.react-flow__pane {
+  cursor: grab;
+}
+
+.react-flow__pane:active {
+  cursor: grabbing;
+}
+
+.react-flow__edge-path {
+  stroke: hsl(var(--viz-cyan) / 0.55);
+  stroke-width: 2;
+  marker-end: url(#viz-flow-arrow);
+}
+
+/* VizMaker-style arrow ports (circle + chevron) */
+.react-flow__handle.viz-arrow-handle {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  border-radius: 9999px !important;
+  background-color: hsl(220 18% 11%) !important;
+  border: 1px solid hsl(220 14% 38%) !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 11px 11px !important;
+  z-index: 12;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.react-flow__handle.viz-arrow-handle--out {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") !important;
+}
+
+.react-flow__handle.viz-arrow-handle--in {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") !important;
+}
+
+.react-flow__handle.viz-arrow-handle--connected {
+  border-color: hsl(var(--viz-cyan)) !important;
+  background-color: hsl(var(--viz-cyan) / 0.12) !important;
+  box-shadow: 0 0 0 2px hsl(var(--viz-cyan) / 0.15);
+}
+
+.react-flow__handle.viz-arrow-handle--connected.viz-arrow-handle--out,
+.react-flow__handle.viz-arrow-handle--connected.viz-arrow-handle--in {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232dd4bf' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6-6 6'/%3E%3C/svg%3E") !important;
+}
+
+.react-flow__controls {
+  display: none;
+}
+
+.react-flow__minimap {
+  display: none;
+}
+
+/* Dot grid — visible on dark canvas (React Flow Background) */
+.react-flow__background {
+  z-index: 0;
+}
+
+.react-flow__background-pattern.dots {
+  fill: hsl(var(--canvas-dots));
+}
+
+/* Editor right sidebar — base readable scale */
+.viz-right-panel {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.viz-right-panel .text-muted-foreground {
+  color: hsl(215 14% 62%);
+}
