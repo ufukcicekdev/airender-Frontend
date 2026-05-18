@@ -65,6 +65,7 @@ interface UIState {
   mediaWorkspaceExpanded: boolean;
   /** Incremented to place a new group at viewport center (FlowCanvas). */
   groupCreateSignal: number;
+  requestNewGroup: () => void;
   setSidebarSection: (section: SidebarSection) => void;
   setPreviewTab: (tab: PreviewTab) => void;
   setCommandPaletteOpen: (open: boolean) => void;
