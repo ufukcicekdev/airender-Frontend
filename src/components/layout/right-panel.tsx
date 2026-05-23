@@ -24,6 +24,7 @@ import { defaultDownloadFilename, isDownloadableMediaUrl } from "@/lib/download-
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { collectCanvasSourceImages } from "@/lib/canvas-input-images";
 import { getNodeMediaInfo, nodeCompareLabel } from "@/lib/node-image-url";
+import { useEditorMediaDisplay } from "@/hooks/use-editor-media-display";
 import { getModelInputRules } from "@/lib/model-input-rules";
 import { RP } from "@/lib/right-panel-typography";
 import type { CatalogModel, CapabilityCategory, ModelPromptPreset } from "@/types";
@@ -33,16 +34,6 @@ const TABS: { id: PreviewTab; label: string }[] = [
   { id: "compare", label: "Compare" },
   { id: "draw", label: "Draw" },
 ];
-
-const PREVIEW_PLACEHOLDER =
-  "data:image/svg+xml," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="220" viewBox="0 0 400 220">
-      <rect fill="#0d0f12" width="400" height="220"/>
-      <path d="M40 170 L120 60 L200 95 L280 40 L360 150 L360 170 Z" fill="#1e2430" stroke="#3d4555" stroke-width="1"/>
-      <rect x="165" y="75" width="55" height="45" fill="#252b38" stroke="#3d4555"/>
-    </svg>`
-  );
 
 function applyCategoryDefaults(
   category: CapabilityCategory,
@@ -66,7 +57,6 @@ export function RightPanel() {
   const {
     previewTab,
     setPreviewTab,
-    renderProgress,
     previewDimensions,
     bottomPrompt,
     setBottomPrompt,
@@ -87,12 +77,12 @@ export function RightPanel() {
     setCompareSlotB,
   } = useUIStore();
 
-  const previewUrl = useEditorStore((s) => s.previewUrl);
   const projectName = useEditorStore((s) => s.projectName);
   const nodes = useEditorStore((s) => s.nodes);
   const updateNodeData = useEditorStore((s) => s.updateNodeData);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
+  const { displayImage, displayProgress } = useEditorMediaDisplay();
 
   const {
     data: categories = [],
@@ -167,22 +157,6 @@ export function RightPanel() {
 
   const inputRules = getModelInputRules(selectedModel, selectedCategory?.slug);
   const canvasImages = collectCanvasSourceImages(nodes);
-  const firstInputPreview = canvasImages[0]?.url;
-  const sourceNode = nodes.find((n) => n.type === "source");
-  const selectedPreview =
-    selectedNode?.type === "source"
-      ? (selectedNode.data?.imageUrl as string)
-      : selectedNode?.type === "render" || selectedNode?.type === "detail"
-        ? (selectedNode.data?.imageUrl as string) ||
-          (selectedNode.data?.thumbnailUrl as string)
-        : undefined;
-
-  const displayImage =
-    previewUrl ||
-    normalizeMediaUrl(selectedPreview) ||
-    normalizeMediaUrl(firstInputPreview) ||
-    normalizeMediaUrl(sourceNode?.data?.imageUrl as string) ||
-    PREVIEW_PLACEHOLDER;
 
   const previewDownload = (() => {
     const fromNode = getNodeMediaInfo(selectedNode);
@@ -198,10 +172,7 @@ export function RightPanel() {
         ),
       };
     }
-    const url =
-      normalizeMediaUrl(previewUrl) ||
-      normalizeMediaUrl(selectedPreview) ||
-      normalizeMediaUrl(firstInputPreview);
+    const url = isDownloadableMediaUrl(displayImage) ? displayImage : null;
     if (!isDownloadableMediaUrl(url)) return null;
     const kind = url.includes(".mp4") || url.includes(".webm") ? "video" as const : "image" as const;
     return {
@@ -388,11 +359,11 @@ export function RightPanel() {
           <div className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
             <div
               className="h-full rounded-full bg-[hsl(var(--viz-cyan))] transition-all"
-              style={{ width: `${renderProgress}%` }}
+              style={{ width: `${displayProgress}%` }}
             />
           </div>
           <span className="shrink-0 text-sm text-muted-foreground">
-            {renderProgress}% · {previewDimensions}
+            {displayProgress}% · {previewDimensions}
           </span>
         </div>
       </div>

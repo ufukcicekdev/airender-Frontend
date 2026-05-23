@@ -22,6 +22,7 @@ import {
   ungroupNode,
 } from "@/lib/canvas-groups";
 import { countCommittedGenerationsFromSource } from "@/lib/generation-nodes";
+import { getNodeMediaInfo } from "@/lib/node-image-url";
 import { fromFlowData, isFlowNodeType } from "@/lib/flow-graph-io";
 import type { FlowData } from "@/types/flow-graph";
 import type { NodeData, Workflow, WorkflowGraph } from "@/types";
@@ -269,10 +270,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       n.data.isDraft !== true
         ? id
         : null;
+    const selectedMedia = getNodeMediaInfo(n)?.url ?? null;
     set({
       selectedNodeId: id,
       selectedNodeIds: id ? [id] : [],
       makeAnchorRenderId,
+      ...(selectedMedia ? { previewUrl: selectedMedia } : {}),
     });
   },
 
@@ -287,10 +290,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           n.data.isDraft !== true
         );
       }) ?? null;
+    const primary = selectedNodeIds[0]
+      ? nodes.find((node) => node.id === selectedNodeIds[0])
+      : undefined;
+    const selectedMedia = getNodeMediaInfo(primary)?.url ?? null;
     set({
       selectedNodeIds,
       selectedNodeId: selectedNodeIds[0] ?? null,
       makeAnchorRenderId,
+      ...(selectedMedia ? { previewUrl: selectedMedia } : {}),
     });
   },
 

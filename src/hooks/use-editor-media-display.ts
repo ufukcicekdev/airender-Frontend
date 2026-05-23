@@ -2,8 +2,11 @@
 
 import { useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
-import { normalizeMediaUrl } from "@/lib/media-url";
-import { collectCanvasSourceImages } from "@/lib/canvas-input-images";
+import { useUIStore } from "@/store/ui-store";
+import {
+  resolveEditorDisplayImage,
+  resolveSelectedRenderProgress,
+} from "@/lib/editor-preview";
 
 const PREVIEW_PLACEHOLDER =
   "data:image/svg+xml," +
@@ -19,28 +22,24 @@ export function useEditorMediaDisplay() {
   const previewUrl = useEditorStore((s) => s.previewUrl);
   const nodes = useEditorStore((s) => s.nodes);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
+  const renderProgress = useUIStore((s) => s.renderProgress);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
-  const canvasImages = useMemo(
-    () => collectCanvasSourceImages(nodes),
-    [nodes]
+  const displayImage = useMemo(
+    () =>
+      resolveEditorDisplayImage(
+        previewUrl,
+        selectedNode,
+        nodes,
+        PREVIEW_PLACEHOLDER
+      ),
+    [previewUrl, selectedNode, nodes]
   );
-  const firstInputPreview = canvasImages[0]?.url;
-  const sourceNode = nodes.find((n) => n.type === "source");
-  const selectedPreview =
-    selectedNode?.type === "source"
-      ? (selectedNode.data?.imageUrl as string)
-      : selectedNode?.type === "render" || selectedNode?.type === "detail"
-        ? (selectedNode.data?.imageUrl as string) ||
-          (selectedNode.data?.thumbnailUrl as string)
-        : undefined;
 
-  const displayImage =
-    previewUrl ||
-    normalizeMediaUrl(selectedPreview) ||
-    normalizeMediaUrl(firstInputPreview) ||
-    normalizeMediaUrl(sourceNode?.data?.imageUrl as string) ||
-    PREVIEW_PLACEHOLDER;
+  const displayProgress = useMemo(
+    () => resolveSelectedRenderProgress(selectedNode, renderProgress),
+    [selectedNode, renderProgress]
+  );
 
-  return { displayImage, selectedNode };
+  return { displayImage, displayProgress, selectedNode };
 }
