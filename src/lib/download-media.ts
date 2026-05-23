@@ -28,7 +28,7 @@ function extensionFor(kind: MediaKind, mime?: string, url?: string): string {
   if (match && ["png", "jpg", "jpeg", "webp", "gif", "mp4", "webm"].includes(match[1].toLowerCase())) {
     return match[1].toLowerCase() === "jpeg" ? "jpg" : match[1].toLowerCase();
   }
-  return kind === "video" ? "mp4" : "png";
+  return "png";
 }
 
 export function defaultDownloadFilename(
