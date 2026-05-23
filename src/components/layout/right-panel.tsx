@@ -81,8 +81,13 @@ export function RightPanel() {
   const nodes = useEditorStore((s) => s.nodes);
   const updateNodeData = useEditorStore((s) => s.updateNodeData);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId);
-  const { displayImage, previewMedia, displayProgress } = useEditorMediaDisplay();
+  const { displayImage, previewMedia, displayProgress, selectedNode } =
+    useEditorMediaDisplay();
+  const renderStage = useUIStore((s) => s.renderStage);
+  const nodeIsRendering =
+    selectedNode &&
+    (selectedNode.data.status === "processing" ||
+      selectedNode.data.status === "queued");
 
   const {
     data: categories = [],
@@ -336,6 +341,8 @@ export function RightPanel() {
         mode={previewTab === "compare" ? "compare" : "preview"}
         singleImage={displayImage}
         singleMediaKind={previewMedia.kind}
+        isRendering={Boolean(nodeIsRendering)}
+        renderStage={renderStage}
         slotA={compareSlotA}
         slotB={compareSlotB}
         split={previewTab === "compare" ? compareSplit : previewSplit}

@@ -5,7 +5,7 @@ import { DownloadMediaButton } from "@/components/editor/download-media-button";
 import { ImageCompareSlider } from "@/components/editor/image-compare-slider";
 import type { MediaKind } from "@/lib/download-media";
 import { isDownloadableMediaUrl } from "@/lib/download-media";
-import { looksLikeVideoUrl } from "@/lib/media-kind";
+import { looksLikeVideoUrl, toPlayableMediaUrl } from "@/lib/media-kind";
 import { useResizablePaneHeight } from "@/hooks/use-resizable-pane-height";
 import { cn } from "@/lib/utils";
 import type { CompareSlot } from "@/store/ui-store";
@@ -24,6 +24,8 @@ type PreviewMediaPaneProps = {
   mode: "preview" | "compare";
   singleImage: string;
   singleMediaKind?: MediaKind;
+  isRendering?: boolean;
+  renderStage?: string;
   slotA: CompareSlot | null;
   slotB: CompareSlot | null;
   split: number;
@@ -41,6 +43,8 @@ export function PreviewMediaPane({
   mode,
   singleImage,
   singleMediaKind = "image",
+  isRendering = false,
+  renderStage,
   slotA,
   slotB,
   split,
@@ -62,6 +66,11 @@ export function PreviewMediaPane({
 
   const canCompare = Boolean(slotA?.imageUrl && slotB?.imageUrl);
   const showSlider = mode === "compare" ? canCompare : canCompare;
+  const playableUrl = toPlayableMediaUrl(singleImage) ?? singleImage;
+  const showVideo =
+    !isRendering &&
+    singleMediaKind === "video" &&
+    looksLikeVideoUrl(playableUrl);
 
   return (
     <div
@@ -101,10 +110,25 @@ export function PreviewMediaPane({
             onSplitChange={onSplitChange}
             className="h-full min-h-[200px]"
           />
-        ) : singleMediaKind === "video" && looksLikeVideoUrl(singleImage) ? (
+        ) : isRendering ? (
+          <div
+            className={cn(
+              "flex h-full min-h-[200px] flex-col items-center justify-center gap-3 bg-[hsl(220,20%,6%)] p-6 text-center",
+              isWorkspace ? "min-h-[200px]" : ""
+            )}
+          >
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[hsl(var(--viz-cyan)/0.25)] border-t-[hsl(var(--viz-cyan))]" />
+            <p className="text-sm font-medium text-foreground">
+              {singleMediaKind === "video" ? "Generating video…" : "Generating…"}
+            </p>
+            {renderStage ? (
+              <p className="text-xs text-muted-foreground">{renderStage}</p>
+            ) : null}
+          </div>
+        ) : showVideo ? (
           <video
-            key={singleImage}
-            src={singleImage}
+            key={playableUrl}
+            src={playableUrl}
             controls
             playsInline
             loop
@@ -117,7 +141,7 @@ export function PreviewMediaPane({
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={singleImage || PLACEHOLDER}
+            src={playableUrl || PLACEHOLDER}
             alt="Preview"
             className={cn(
               "w-full object-contain",

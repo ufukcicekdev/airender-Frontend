@@ -53,6 +53,7 @@ interface EditorState {
   lastSavedAt: number | null;
   previewUrl: string | null;
   activeRenderTaskId: string | null;
+  renderingNodeId: string | null;
   history: HistoryEntry[];
   historyIndex: number;
   /** Bumped after Make commits a preview so draft sync runs again. */
@@ -76,7 +77,12 @@ interface EditorState {
   groupSelection: () => void;
   ungroupSelection: () => void;
   applyNodeGroupAfterDrag: (nodeId: string) => void;
-  updateNodeData: (id: string, data: Partial<NodeData>) => void;
+  updateNodeData: (
+    id: string,
+    data: Partial<NodeData>,
+    options?: { silent?: boolean }
+  ) => void;
+  setRenderingNodeId: (id: string | null) => void;
   setNodePosition: (id: string, position: { x: number; y: number }) => void;
   addNode: (node: EditorNode) => void;
   /** Add a render node + edges created by Make (generation-driven canvas). */
@@ -85,7 +91,7 @@ interface EditorState {
   commitDraftPreview: (draftId: string, data: Partial<NodeData>) => string;
   bumpDraftSync: () => void;
   applyFlowData: (flow: FlowData) => void;
-  mergeCanvasGraph: (graph: WorkflowGraph) => void;
+  mergeCanvasGraph: (graph: WorkflowGraph, options?: { silent?: boolean }) => void;
   getCanvasGraph: () => ReturnType<typeof toCanvasGraph>;
   duplicateSelected: () => void;
   deleteSelected: () => void;
@@ -119,6 +125,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   lastSavedAt: null,
   previewUrl: null,
   activeRenderTaskId: null,
+  renderingNodeId: null,
   history: [],
   historyIndex: -1,
   draftSyncVersion: 0,
@@ -144,6 +151,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       lastSavedAt: null,
       previewUrl: null,
       activeRenderTaskId: null,
+      renderingNodeId: null,
       history: [],
       historyIndex: -1,
       draftSyncVersion: 0,
@@ -183,10 +191,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ nodes, edges, isDirty: true });
   },
 
-  mergeCanvasGraph: (graph) => {
+  mergeCanvasGraph: (graph, options) => {
     const { nodes, edges } = get();
     const merged = mergeCanvasGraphFromServer(nodes, edges, graph);
-    set({ nodes: merged.nodes, edges: merged.edges, isDirty: true });
+    set({
+      nodes: merged.nodes,
+      edges: merged.edges,
+      ...(options?.silent ? {} : { isDirty: true }),
+    });
   },
 
   getCanvasGraph: () => {
@@ -356,14 +368,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ nodes: next, selectedNodeId: null, selectedNodeIds: [], isDirty: true });
   },
 
-  updateNodeData: (id, data) => {
+  updateNodeData: (id, data, options) => {
     set({
       nodes: get().nodes.map((n) =>
         n.id === id ? { ...n, data: { ...n.data, ...data } } : n
       ),
-      isDirty: true,
+      ...(options?.silent ? {} : { isDirty: true }),
     });
   },
+
+  setRenderingNodeId: (renderingNodeId) => set({ renderingNodeId }),
 
   setNodePosition: (id, position) => {
     const node = get().nodes.find((n) => n.id === id);

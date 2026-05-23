@@ -1,7 +1,7 @@
 import { collectCanvasSourceImages } from "@/lib/canvas-input-images";
 import type { MediaKind } from "@/lib/download-media";
 import { getNodeMediaInfo } from "@/lib/node-image-url";
-import { inferMediaKind } from "@/lib/media-kind";
+import { inferMediaKind, toPlayableMediaUrl } from "@/lib/media-kind";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import type { EditorNode } from "@/store/editor-store";
 
@@ -61,7 +61,10 @@ export function resolveEditorPreviewMedia(
 ): EditorPreviewMedia {
   const fromNode = getNodeMediaInfo(selectedNode);
   if (fromNode?.url) {
-    return { url: fromNode.url, kind: fromNode.kind };
+    return {
+      url: toPlayableMediaUrl(fromNode.url) ?? fromNode.url,
+      kind: fromNode.kind,
+    };
   }
 
   const url = resolveEditorDisplayImage(
@@ -70,9 +73,10 @@ export function resolveEditorPreviewMedia(
     nodes,
     placeholder
   );
+  const playable = toPlayableMediaUrl(url) ?? url;
   return {
-    url,
-    kind: inferMediaKind(url, selectedNode),
+    url: playable,
+    kind: inferMediaKind(playable, selectedNode),
   };
 }
 

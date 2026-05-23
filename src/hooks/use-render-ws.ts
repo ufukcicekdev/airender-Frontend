@@ -7,24 +7,64 @@ import { taskToRenderPayload } from "@/lib/render-payload";
 import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
 import { useAuthStore } from "@/store/auth-store";
-import {
-  isCanvasGraph,
-  mergeCanvasGraphFromServer,
-} from "@/lib/canvas-graph-io";
+import { isCanvasGraph } from "@/lib/canvas-graph-io";
 import type { RenderUpdatePayload } from "@/services/websocket.service";
 import type { WorkflowGraph } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { saveWorkflowNow } from "@/lib/workflow-save";
 
 const TERMINAL = new Set(["completed", "failed", "cancelled"]);
-const POLL_MS_ACTIVE = 2000;
-const POLL_MS_QUEUED = 1500;
+/** HTTP fallback only when WebSocket is quiet — keeps Network tab clean. */
+const POLL_MS_QUEUED = 4000;
+const POLL_MS_ACTIVE = 5000;
+const WS_GRACE_MS = 3500;
+
+function applyMediaToRenderNode(
+  renderNodeId: string,
+  url: string,
+  outputType: string,
+  payload: RenderUpdatePayload
+) {
+  const isVideo = outputType === "video";
+  if (isVideo) {
+    useEditorStore.getState().updateNodeData(
+      renderNodeId,
+      {
+        videoUrl: url,
+        imageUrl: undefined,
+        url,
+        outputType: "video",
+        status: payload.status === "completed" ? "completed" : "processing",
+        progress: payload.progress,
+      },
+      { silent: true }
+    );
+  } else {
+    useEditorStore.getState().updateNodeData(
+      renderNodeId,
+      {
+        imageUrl: url,
+        videoUrl: undefined,
+        url,
+        outputType: "image",
+        status: payload.status === "completed" ? "completed" : "processing",
+        progress: payload.progress,
+      },
+      { silent: true }
+    );
+  }
+}
 
 function applyRenderPayload(
   taskId: string,
   payload: RenderUpdatePayload,
   options: { mergeGraph: boolean }
 ) {
-  const setRenderProgress = useUIStore.getState().setRenderProgress;
+  const ui = useUIStore.getState();
+  ui.setRenderProgress(payload.progress ?? 0);
+  if (payload.current_stage) {
+    ui.setRenderStage(payload.current_stage);
+  }
   const {
     updateNodeData,
     mergeCanvasGraph,
@@ -32,13 +72,13 @@ function applyRenderPayload(
     setPreviewUrl,
   } = useEditorStore.getState();
 
-  setRenderProgress(payload.progress ?? 0);
-
   const targetRenderId =
     (payload.node_statuses?._target_render_id as string | undefined) || undefined;
 
   const resolveTargetRenderId = () => {
     if (targetRenderId) return targetRenderId;
+    const renderingId = useEditorStore.getState().renderingNodeId;
+    if (renderingId) return renderingId;
     const { nodes } = useEditorStore.getState();
     const processing = nodes.find(
       (n) =>
@@ -50,7 +90,7 @@ function applyRenderPayload(
 
   if (options.mergeGraph && payload.flow_data?.nodes) {
     if (isCanvasGraph(payload.flow_data)) {
-      mergeCanvasGraph(payload.flow_data as WorkflowGraph);
+      mergeCanvasGraph(payload.flow_data as WorkflowGraph, { silent: true });
     } else {
       applyFlowData(payload.flow_data);
     }
@@ -58,10 +98,14 @@ function applyRenderPayload(
 
   Object.entries(payload.node_statuses || {}).forEach(([nodeId, st]) => {
     if (nodeId.startsWith("_")) return;
-    updateNodeData(nodeId, {
-      status: st as "idle" | "queued" | "processing" | "completed" | "error",
-      progress: payload.progress,
-    });
+    updateNodeData(
+      nodeId,
+      {
+        status: st as "idle" | "queued" | "processing" | "completed" | "error",
+        progress: payload.progress,
+      },
+      { silent: true }
+    );
   });
 
   const outputUrl = payload.output_url;
@@ -69,74 +113,56 @@ function applyRenderPayload(
   const renderNodeId = resolveTargetRenderId();
 
   if (outputUrl && renderNodeId) {
-    if (outputType === "video") {
-      updateNodeData(renderNodeId, {
-        videoUrl: outputUrl,
-        imageUrl: undefined,
-        url: outputUrl,
-        outputType: "video",
-        status: payload.status === "completed" ? "completed" : "processing",
-        progress: payload.progress,
-      });
-    } else {
-      updateNodeData(renderNodeId, {
-        imageUrl: outputUrl,
-        videoUrl: undefined,
-        url: outputUrl,
-        outputType: "image",
-        status: payload.status === "completed" ? "completed" : "processing",
-        progress: payload.progress,
-      });
-    }
+    applyMediaToRenderNode(renderNodeId, outputUrl, outputType, payload);
     setPreviewUrl(outputUrl);
   }
 
   if (payload.status === "completed") {
-    if (!outputUrl) {
+    if (!outputUrl && renderNodeId) {
       const graph = payload.flow_data;
       const renderNode = graph?.nodes?.find(
         (n) =>
           n.id === renderNodeId || n.type === "render" || n.type === "detail"
       );
       const data = renderNode?.data as Record<string, unknown> | undefined;
+      const videoUrl = data?.videoUrl as string | undefined;
+      const imageUrl = data?.imageUrl as string | undefined;
       const url =
-        (data?.videoUrl as string) ||
-        (data?.imageUrl as string) ||
-        (data?.url as string);
-      if (url && typeof url === "string") {
-        setPreviewUrl(url);
-        if (renderNodeId) {
-          updateNodeData(renderNodeId, {
-            status: "completed",
-            progress: 100,
-            imageUrl: url,
-            url,
-          });
-        }
-      } else {
-        setPreviewUrl(`/api/render/${taskId}/preview`);
-      }
+        videoUrl ||
+        imageUrl ||
+        (data?.url as string) ||
+        `/api/render/${taskId}/preview`;
+      const resolvedType = videoUrl ? "video" : payload.output_type || "image";
+      applyMediaToRenderNode(renderNodeId, url, resolvedType, payload);
+      setPreviewUrl(url);
     }
     void useAuthStore.getState().fetchUser();
   }
 
   if (payload.status === "failed" && renderNodeId) {
-    updateNodeData(renderNodeId, {
-      status: "error",
-      error: payload.error_message,
-    });
+    updateNodeData(
+      renderNodeId,
+      {
+        status: "error",
+        error: payload.error_message,
+      },
+      { silent: true }
+    );
   }
 }
 
 function finishTask(taskId: string | null) {
   if (taskId) {
     useEditorStore.getState().setActiveRenderTask(null);
+    useEditorStore.getState().setRenderingNodeId(null);
   }
-  useUIStore.getState().setRenderProgress(0);
+  const ui = useUIStore.getState();
+  ui.setRenderProgress(0);
+  ui.setRenderStage("");
 }
 
 /**
- * Track one active render: HTTP poll (2s) + optional WebSocket. Stops when done.
+ * Track one active render: WebSocket first, rare HTTP fallback poll.
  */
 export function useRenderWebSocket(taskId: string | null) {
   const { toast } = useToast();
@@ -150,8 +176,18 @@ export function useRenderWebSocket(taskId: string | null) {
     let pollTimer: ReturnType<typeof setTimeout> | null = null;
     let pollAttempts = 0;
     let queuedWarned = false;
+    let wsSeen = false;
+    let pollScheduled = false;
     const startedAt = Date.now();
     const trackedTaskId = taskId;
+
+    const clearPoll = () => {
+      if (pollTimer) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      pollScheduled = false;
+    };
 
     const handleTerminal = (status: string, errorMessage?: string) => {
       finishTask(trackedTaskId);
@@ -162,10 +198,18 @@ export function useRenderWebSocket(taskId: string | null) {
           variant: "destructive",
         });
       }
+      if (status === "completed") {
+        void saveWorkflowNow().then(() => {
+          useEditorStore.getState().setDirty(false);
+        });
+      }
     };
 
     const onPayload = (payload: RenderUpdatePayload) => {
-      if (cancelled || payload.task_id !== trackedTaskId) return;
+      if (cancelled || payload.task_id !== trackedTaskId) return false;
+
+      wsSeen = true;
+      clearPoll();
 
       const terminal = TERMINAL.has(payload.status);
       applyRenderPayload(trackedTaskId, payload, {
@@ -180,8 +224,12 @@ export function useRenderWebSocket(taskId: string | null) {
     };
 
     const schedulePoll = (delayMs: number) => {
-      if (cancelled) return;
-      pollTimer = setTimeout(() => void pollOnce(), delayMs);
+      if (cancelled || pollScheduled) return;
+      pollScheduled = true;
+      pollTimer = setTimeout(() => {
+        pollScheduled = false;
+        void pollOnce();
+      }, delayMs);
     };
 
     const pollOnce = async () => {
@@ -221,18 +269,24 @@ export function useRenderWebSocket(taskId: string | null) {
       }
     };
 
-    pollOnce();
-
-    const unsubWs = subscribeRender(trackedTaskId, (payload) => {
-      if (onPayload(payload) && pollTimer) {
-        clearTimeout(pollTimer);
-        pollTimer = null;
+    const unsubWs = subscribeRender(
+      trackedTaskId,
+      (payload) => {
+        onPayload(payload);
+      },
+      {
+        onOpen: () => clearPoll(),
+        onError: () => {
+          if (!wsSeen) schedulePoll(800);
+        },
       }
-    });
+    );
+
+    schedulePoll(WS_GRACE_MS);
 
     return () => {
       cancelled = true;
-      if (pollTimer) clearTimeout(pollTimer);
+      clearPoll();
       unsubWs();
     };
   }, [taskId]);

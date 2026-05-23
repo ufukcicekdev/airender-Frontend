@@ -30,12 +30,19 @@ export type RenderUpdatePayload = {
   output_type?: "image" | "video";
 };
 
+export type RenderWsCallbacks = {
+  onOpen?: () => void;
+  onError?: (error: Event) => void;
+};
+
 export function subscribeRender(
   taskId: string,
   onMessage: (payload: RenderUpdatePayload) => void,
-  onError?: (error: Event) => void
+  callbacks?: RenderWsCallbacks
 ): () => void {
   const ws = new WebSocket(wsRenderUrl(taskId));
+
+  ws.onopen = () => callbacks?.onOpen?.();
 
   ws.onmessage = (event) => {
     try {
@@ -46,7 +53,7 @@ export function subscribeRender(
     }
   };
 
-  ws.onerror = (e) => onError?.(e);
+  ws.onerror = (e) => callbacks?.onError?.(e);
 
   return () => {
     if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {

@@ -44,6 +44,7 @@ interface UIState {
   renderMode: string;
   serverConnected: boolean;
   renderProgress: number;
+  renderStage: string;
   previewDimensions: string;
   imageEditPriority: ImageEditPriority;
   imageEditResolution: ImageEditResolution;
@@ -82,6 +83,7 @@ interface UIState {
   setRenderMode: (mode: string) => void;
   setServerConnected: (connected: boolean) => void;
   setRenderProgress: (progress: number) => void;
+  setRenderStage: (stage: string) => void;
   setImageEditPriority: (priority: ImageEditPriority) => void;
   setImageEditResolution: (resolution: ImageEditResolution) => void;
   setImageEditAspectRatio: (ratio: ImageEditAspectRatio) => void;
@@ -117,6 +119,7 @@ export const useUIStore = create<UIState>((set) => ({
   renderMode: "2. Details editor",
   serverConnected: true,
   renderProgress: 36,
+  renderStage: "",
   previewDimensions: "1024 × 494",
   imageEditPriority: "standard",
   imageEditResolution: "1k",
@@ -159,6 +162,7 @@ export const useUIStore = create<UIState>((set) => ({
   setRenderMode: (renderMode) => set({ renderMode }),
   setServerConnected: (serverConnected) => set({ serverConnected }),
   setRenderProgress: (renderProgress) => set({ renderProgress }),
+  setRenderStage: (renderStage) => set({ renderStage }),
   setImageEditPriority: (imageEditPriority) => set({ imageEditPriority }),
   setImageEditResolution: (imageEditResolution) => set({ imageEditResolution }),
   setImageEditAspectRatio: (imageEditAspectRatio) => set({ imageEditAspectRatio }),

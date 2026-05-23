@@ -18,7 +18,9 @@ export function useAutoSave() {
   const setSaving = useEditorStore((s) => s.setSaving);
 
   const flushSave = useCallback(async () => {
-    if (!workflowId || !useEditorStore.getState().isDirty) return;
+    const state = useEditorStore.getState();
+    if (!workflowId || !state.isDirty) return;
+    if (state.activeRenderTaskId) return;
     if (savingRef.current) return;
 
     savingRef.current = true;

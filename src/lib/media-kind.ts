@@ -17,5 +17,29 @@ export function inferMediaKind(
   if (String(node?.data?.outputType || "").toLowerCase() === "video") return "video";
   if (node?.data?.categorySlug === "image-to-video") return "video";
   if (looksLikeVideoUrl(url)) return "video";
+  if (
+    url &&
+    url.includes("/api/render/") &&
+    url.endsWith("/preview") &&
+    node?.data?.categorySlug === "image-to-video"
+  ) {
+    return "video";
+  }
   return "image";
+}
+
+/** Prefer same-origin URLs for playback in the editor. */
+export function toPlayableMediaUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("data:")) return url;
+  if (url.startsWith("/api/") || url.startsWith("/media/")) return url;
+  try {
+    const parsed = new URL(url, typeof window !== "undefined" ? window.location.origin : undefined);
+    if (parsed.pathname.startsWith("/media/")) {
+      return parsed.pathname;
+    }
+  } catch {
+    /* keep absolute URL */
+  }
+  return url;
 }

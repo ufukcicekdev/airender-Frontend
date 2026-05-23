@@ -54,6 +54,8 @@ export function VizNodeCard({
   const status = data.status || "idle";
   const isDraft = data.isDraft === true;
   const isProcessing = status === "processing" || status === "queued";
+  const progressPct =
+    typeof data.progress === "number" ? Math.round(data.progress) : null;
   const isCompleted = status === "completed";
   const hasRenderedOutput =
     isCompleted && Boolean(data.imageUrl || data.videoUrl) && !isDraft;
@@ -164,8 +166,14 @@ export function VizNodeCard({
         )}
 
         {isProcessing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/45">
             <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--viz-cyan))]" />
+            <span className="rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-medium text-[hsl(var(--viz-cyan))]">
+              {data.categorySlug === "image-to-video"
+                ? "Generating video"
+                : "Generating"}
+              {progressPct != null ? ` · ${progressPct}%` : ""}
+            </span>
           </div>
         )}
         {badge && variant === "generation" && (

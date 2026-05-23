@@ -91,6 +91,7 @@ export function useExecuteMake() {
         variant: "destructive",
       });
       useEditorStore.getState().updateNodeData(renderNodeId, { status: "idle" });
+      useEditorStore.getState().setRenderingNodeId(null);
       return;
     }
 
@@ -100,6 +101,7 @@ export function useExecuteMake() {
         modelSlug,
       });
       useEditorStore.getState().setActiveRenderTask(data.id);
+      useEditorStore.getState().setRenderingNodeId(renderNodeId);
       ui.setRenderProgress(data.progress || 12);
     } catch (err) {
       toast({
@@ -108,6 +110,7 @@ export function useExecuteMake() {
         variant: "destructive",
       });
       useEditorStore.getState().updateNodeData(renderNodeId, { status: "idle" });
+      useEditorStore.getState().setRenderingNodeId(null);
     }
   }, [runMake, readiness, selectedModel, toast]);
 
