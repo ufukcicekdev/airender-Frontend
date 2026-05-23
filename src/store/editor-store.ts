@@ -33,14 +33,19 @@ interface HistoryEntry {
   edges: Edge[];
 }
 
+export type WorkflowLoadState = "idle" | "loading" | "ready" | "error";
+
 interface EditorState {
   projectId: string | null;
   workflowId: string | null;
+  workflowLoadState: WorkflowLoadState;
   projectName: string;
   nodes: EditorNode[];
   edges: Edge[];
   selectedNodeId: string | null;
   selectedNodeIds: string[];
+  /** Last selected committed render — Make chains from this if selection clears. */
+  makeAnchorRenderId: string | null;
   selectedEdgeIds: string[];
   isDirty: boolean;
   isSaving: boolean;
@@ -53,6 +58,8 @@ interface EditorState {
   draftSyncVersion: number;
 
   setProject: (projectId: string, workflowId: string, name: string) => void;
+  setWorkflowLoadState: (state: WorkflowLoadState) => void;
+  resetForProject: (projectId: string) => void;
   loadWorkflow: (workflow: Workflow) => void;
   onNodesChange: (changes: NodeChange<EditorNode>[]) => void;
   onEdgesChange: (changes: EdgeChange[]) => void;
@@ -98,11 +105,13 @@ const MAX_HISTORY = 50;
 export const useEditorStore = create<EditorState>((set, get) => ({
   projectId: null,
   workflowId: null,
+  workflowLoadState: "idle",
   projectName: "Untitled",
   nodes: [],
   edges: [],
   selectedNodeId: null,
   selectedNodeIds: [],
+  makeAnchorRenderId: null,
   selectedEdgeIds: [],
   isDirty: false,
   isSaving: false,
@@ -115,6 +124,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setProject: (projectId, workflowId, name) =>
     set({ projectId, workflowId, projectName: name }),
+
+  setWorkflowLoadState: (workflowLoadState) => set({ workflowLoadState }),
+
+  resetForProject: (projectId) =>
+    set({
+      projectId,
+      workflowId: null,
+      workflowLoadState: "loading",
+      projectName: "Untitled",
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      selectedNodeIds: [],
+      selectedEdgeIds: [],
+      isDirty: false,
+      isSaving: false,
+      lastSavedAt: null,
+      previewUrl: null,
+      activeRenderTaskId: null,
+      history: [],
+      historyIndex: -1,
+      draftSyncVersion: 0,
+    }),
 
   loadWorkflow: (workflow) => {
     const graph = workflow.graph || { nodes: [], edges: [] };
@@ -135,6 +167,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     set({
       workflowId: workflow.id,
+      workflowLoadState: "ready",
       nodes,
       edges,
       isDirty: false,
@@ -227,14 +260,39 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 
-  setSelectedNode: (id) =>
-    set({ selectedNodeId: id, selectedNodeIds: id ? [id] : [] }),
+  setSelectedNode: (id) => {
+    const nodes = get().nodes;
+    const n = id ? nodes.find((node) => node.id === id) : undefined;
+    const makeAnchorRenderId =
+      n &&
+      (n.type === "render" || n.type === "detail") &&
+      n.data.isDraft !== true
+        ? id
+        : null;
+    set({
+      selectedNodeId: id,
+      selectedNodeIds: id ? [id] : [],
+      makeAnchorRenderId,
+    });
+  },
 
-  setSelectedNodeIds: (selectedNodeIds) =>
+  setSelectedNodeIds: (selectedNodeIds) => {
+    const nodes = get().nodes;
+    const makeAnchorRenderId =
+      selectedNodeIds.find((id) => {
+        const n = nodes.find((node) => node.id === id);
+        return (
+          n &&
+          (n.type === "render" || n.type === "detail") &&
+          n.data.isDraft !== true
+        );
+      }) ?? null;
     set({
       selectedNodeIds,
       selectedNodeId: selectedNodeIds[0] ?? null,
-    }),
+      makeAnchorRenderId,
+    });
+  },
 
   setSelectedEdgeIds: (selectedEdgeIds) => set({ selectedEdgeIds }),
 

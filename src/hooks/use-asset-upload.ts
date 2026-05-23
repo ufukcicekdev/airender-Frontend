@@ -2,7 +2,6 @@
 
 import { useCallback, useState } from "react";
 import { assetService } from "@/services/asset.service";
-import { normalizeMediaUrl } from "@/lib/media-url";
 import { useToast } from "@/hooks/use-toast";
 import type { Asset } from "@/types";
 
@@ -19,8 +18,9 @@ export function useAssetUpload() {
       setUploading(true);
       try {
         const { data: asset } = await assetService.upload(file);
-        const imageUrl = normalizeMediaUrl(asset.file_url) ?? asset.file_url;
-        const thumbnailUrl = normalizeMediaUrl(asset.thumbnail_url) ?? asset.thumbnail_url ?? undefined;
+        // Keep full HTTPS URL on the node so Fal/backend can fetch it (not /media proxy path).
+        const imageUrl = asset.file_url;
+        const thumbnailUrl = asset.thumbnail_url ?? undefined;
         return { imageUrl, thumbnailUrl, asset };
       } catch {
         toast({ title: "Upload failed", description: "Could not upload image.", variant: "destructive" });

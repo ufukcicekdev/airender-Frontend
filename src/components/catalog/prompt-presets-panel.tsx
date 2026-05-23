@@ -341,12 +341,21 @@ export function PromptPresetsPanel({
             <CustomSelect
               value={form.icon}
               onValueChange={(v) => setForm((f) => ({ ...f, icon: v }))}
-              options={PRESET_ICON_OPTIONS.map((o) => ({
-                value: o.value,
-                label: o.label,
-              }))}
+              options={PRESET_ICON_OPTIONS.map((o) => {
+                const Icon = getCatalogIcon(o.value);
+                return {
+                  value: o.value,
+                  label: o.label,
+                  icon: (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[hsl(220,16%,14%)] text-muted-foreground">
+                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                    </span>
+                  ),
+                };
+              })}
               size="panel"
-              triggerClassName="h-10 border-border/50 bg-[hsl(220,16%,9%)] text-sm"
+              className="w-full"
+              triggerClassName="border-border/50 bg-[hsl(220,16%,9%)] text-sm"
             />
           </div>
           <div className="space-y-1.5">
@@ -396,12 +405,7 @@ export function PromptPresetsPanel({
         </div>
       ) : null}
 
-      <div
-        className={cn(
-          "grid max-h-[min(52vh,440px)] gap-2 overflow-y-auto px-2.5 py-2.5",
-          gridCols
-        )}
-      >
+      <div className={cn("grid gap-2 px-2.5 py-2.5 pb-4", gridCols)}>
         {tab === "catalog" ? (
           !category?.prompt_presets.length ? (
             <p className={cn("col-span-full", RP.empty)}>

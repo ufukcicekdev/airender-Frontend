@@ -1,6 +1,6 @@
 "use client";
 
-import { EngineSelect } from "@/components/catalog/engine-select";
+import { ModelEnginePanel } from "@/components/catalog/model-engine-panel";
 import { PanelSettingRow } from "@/components/catalog/panel-setting-row";
 import {
   IMAGE_EDIT_ASPECT_RATIO_OPTIONS,
@@ -28,20 +28,13 @@ export function ImageEditControls({
   const setResolution = useUIStore((s) => s.setImageEditResolution);
   const setAspectRatio = useUIStore((s) => s.setImageEditAspectRatio);
 
-  const selected = models.find((m) => m.slug === selectedSlug);
-
   return (
     <div className="border-b border-border/60">
-      <EngineSelect models={models} selectedSlug={selectedSlug} onSelect={onSelectModel} />
-      {selected ? (
-        <p className="px-4 pb-2 text-sm leading-snug text-muted-foreground">
-          <span className="text-[hsl(var(--viz-cyan))]">
-            {selected.credit_cost} credits
-          </span>
-          {" · "}
-          {selected.provider || "local"}
-        </p>
-      ) : null}
+      <ModelEnginePanel
+        models={models}
+        selectedSlug={selectedSlug}
+        onSelectModel={onSelectModel}
+      />
       <PanelSettingRow
         label="Priority"
         value={priority}

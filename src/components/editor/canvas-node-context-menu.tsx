@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Columns2, Eraser, ImageIcon, Paintbrush, Ungroup } from "lucide-react";
+import { Columns2, Download, Eraser, ImageIcon, Paintbrush, Ungroup } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getNodeImageUrl, nodeCompareLabel } from "@/lib/node-image-url";
+import { defaultDownloadFilename, downloadMedia, isDownloadableMediaUrl } from "@/lib/download-media";
+import { getNodeImageUrl, getNodeMediaInfo, nodeCompareLabel } from "@/lib/node-image-url";
+import { useToast } from "@/hooks/use-toast";
 import type { EditorNode } from "@/store/editor-store";
 import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
@@ -33,8 +35,11 @@ export function CanvasNodeContextMenu({
   const setDrawTarget = useUIStore((s) => s.setDrawTarget);
   const ungroupSelection = useEditorStore((s) => s.ungroupSelection);
   const setSelectedNodeIds = useEditorStore((s) => s.setSelectedNodeIds);
+  const projectName = useEditorStore((s) => s.projectName);
+  const { toast } = useToast();
 
   const imageUrl = getNodeImageUrl(node);
+  const mediaInfo = getNodeMediaInfo(node);
   const isGroup = node?.type === "group";
 
   useEffect(() => {
@@ -138,6 +143,40 @@ export function CanvasNodeContextMenu({
           No image on this node
         </p>
       )}
+      <div className="my-1 h-px bg-border/60" />
+      <button
+        type="button"
+        disabled={!mediaInfo || !isDownloadableMediaUrl(mediaInfo.url)}
+        onClick={() => {
+          if (!mediaInfo) return;
+          const filename = defaultDownloadFilename(
+            `${projectName}-${nodeCompareLabel(node)}`,
+            mediaInfo.kind,
+            undefined,
+            mediaInfo.url
+          );
+          void downloadMedia(mediaInfo.url, {
+            filename,
+            kind: mediaInfo.kind,
+          })
+            .then(() => toast({ title: "Download started", description: filename }))
+            .catch(() =>
+              toast({
+                title: "Download failed",
+                variant: "destructive",
+              })
+            );
+          onClose();
+        }}
+        className={cn(
+          "flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-white/5",
+          (!mediaInfo || !isDownloadableMediaUrl(mediaInfo?.url)) &&
+            "cursor-not-allowed opacity-40"
+        )}
+      >
+        <Download className="h-4 w-4 text-[hsl(var(--viz-cyan))]" />
+        Download
+      </button>
       <div className="my-1 h-px bg-border/60" />
       <p className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         Draw

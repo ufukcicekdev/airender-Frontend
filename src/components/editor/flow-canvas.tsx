@@ -18,6 +18,7 @@ import {
   type CanvasContextMenuState,
 } from "@/components/editor/canvas-node-context-menu";
 import { createPaletteNode } from "@/lib/create-palette-node";
+import { repositionDraftPreviewForSource } from "@/lib/generation-nodes";
 import { useAssetUpload } from "@/hooks/use-asset-upload";
 import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
@@ -99,10 +100,18 @@ function CanvasInner() {
     setContextMenu(null);
   }, []);
 
+  const onNodeDragStart = useCallback(() => {
+    useUIStore.getState().setCanvasDragging(true);
+  }, []);
+
   const onNodeDragStop = useCallback(
     (_event: React.MouseEvent, node: { id: string; type?: string }) => {
+      useUIStore.getState().setCanvasDragging(false);
       pushHistory();
       updateNodeData(node.id, { userPositioned: true });
+      if (node.type === "source") {
+        repositionDraftPreviewForSource(node.id);
+      }
       if (node.type !== "group") {
         applyNodeGroupAfterDrag(node.id);
       }
@@ -225,6 +234,7 @@ function CanvasInner() {
         onSelectionChange={onSelectionChange}
         onNodeContextMenu={onNodeContextMenu}
         onPaneClick={onPaneClick}
+        onNodeDragStart={onNodeDragStart}
         onNodeDragStop={onNodeDragStop}
         onDragOver={onDragOver}
         onDrop={onDrop}

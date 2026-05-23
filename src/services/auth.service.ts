@@ -10,16 +10,16 @@ export const authService = {
     email: string;
     password: string;
     password_confirm: string;
-  }) => api.post<{ user: User }>("/auth/register", data),
+  }) => api.post<{ user: User; access?: string }>("/auth/register", data),
 
   login: (data: { email: string; password: string }) =>
-    api.post<{ user: User }>("/auth/login", data),
+    api.post<{ user: User; access?: string }>("/auth/login", data),
 
   logout: () => api.post("/auth/logout"),
 
   me: () => api.get<User>("/auth/me"),
 
-  refresh: () => api.post("/auth/refresh"),
+  refresh: () => api.post<{ message?: string; access?: string }>("/auth/refresh"),
 
   verifyEmail: (token: string) =>
     api.post<{ user: User }>("/auth/verify-email", { token }),

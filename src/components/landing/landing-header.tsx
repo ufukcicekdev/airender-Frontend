@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
@@ -15,8 +16,15 @@ const NAV = [
 ];
 
 export function LandingHeader() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { user, isAuthenticated, isLoading, fetchUser } = useAuthStore();
+  const { user, isAuthenticated, isLoading, fetchUser, logout } = useAuthStore();
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await logout();
+    router.push("/login");
+  };
 
   useEffect(() => {
     fetchUser();
@@ -49,12 +57,24 @@ export function LandingHeader() {
             <>
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
-                  Dashboard
+                  Projects
                 </Button>
               </Link>
               <Link href="/account">
-                <Button size="sm">Account</Button>
+                <Button variant="ghost" size="sm">
+                  Account
+                </Button>
               </Link>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => void handleLogout()}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Log out
+              </Button>
             </>
           ) : (
             <>
@@ -101,12 +121,23 @@ export function LandingHeader() {
             <>
               <Link href="/dashboard" onClick={() => setOpen(false)}>
                 <Button variant="outline" className="w-full">
-                  Dashboard
+                  Projects
                 </Button>
               </Link>
               <Link href="/account" onClick={() => setOpen(false)}>
-                <Button className="w-full">Account</Button>
+                <Button variant="outline" className="w-full">
+                  Account
+                </Button>
               </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full gap-2"
+                onClick={() => void handleLogout()}
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </Button>
             </>
           ) : (
             <>

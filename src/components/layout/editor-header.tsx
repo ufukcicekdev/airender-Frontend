@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Cloud, CloudOff, Loader2, Plus } from "lucide-react";
+import { Cloud, CloudOff, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui-store";
 import { useEditorStore } from "@/store/editor-store";
-import { Button } from "@/components/ui/button";
-import { CanvasUploadButton } from "@/components/editor/canvas-upload-button";
 
 function formatSavedAgo(timestamp: number): string {
   const sec = Math.floor((Date.now() - timestamp) / 1000);
@@ -19,7 +17,6 @@ function formatSavedAgo(timestamp: number): string {
 
 export function EditorHeader() {
   const serverConnected = useUIStore((s) => s.serverConnected);
-  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const isDirty = useEditorStore((s) => s.isDirty);
   const isSaving = useEditorStore((s) => s.isSaving);
   const lastSavedAt = useEditorStore((s) => s.lastSavedAt);
@@ -40,7 +37,7 @@ export function EditorHeader() {
         : "Auto-save on";
 
   return (
-    <header className="flex h-9 shrink-0 items-center justify-between border-b border-border/60 bg-[hsl(220,18%,8%)] px-4">
+    <header className="flex h-9 shrink-0 items-center border-b border-border/60 bg-[hsl(220,18%,8%)] px-4">
       <div className="flex items-center gap-3 text-sm">
         <span className="font-semibold tracking-tight text-foreground">Vizmake</span>
         <span className="text-muted-foreground">|</span>
@@ -71,22 +68,6 @@ export function EditorHeader() {
           {isSaving && <Loader2 className="h-3 w-3 animate-spin" />}
           {saveLabel}
         </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <CanvasUploadButton />
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-7 gap-1.5 border-border/60 text-xs"
-          onClick={() => setCommandPaletteOpen(true)}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add node
-          <kbd className="ml-1 hidden rounded bg-white/10 px-1 font-mono text-[10px] sm:inline">
-            ⌘K
-          </kbd>
-        </Button>
       </div>
     </header>
   );

@@ -4,7 +4,11 @@ import { useEffect } from "react";
 import { Minimize2, X } from "lucide-react";
 import { DrawPanel } from "@/components/editor/draw-panel";
 import { PreviewMediaPane } from "@/components/editor/preview-media-pane";
+import { DownloadMediaButton } from "@/components/editor/download-media-button";
 import { useEditorMediaDisplay } from "@/hooks/use-editor-media-display";
+import { useEditorStore } from "@/store/editor-store";
+import { defaultDownloadFilename, isDownloadableMediaUrl } from "@/lib/download-media";
+import { getNodeMediaInfo } from "@/lib/node-image-url";
 import { cn } from "@/lib/utils";
 import { useUIStore, type PreviewTab } from "@/store/ui-store";
 
@@ -32,7 +36,24 @@ export function MediaWorkspaceOverlay() {
     setCompareSlotA,
     setCompareSlotB,
   } = useUIStore();
-  const { displayImage } = useEditorMediaDisplay();
+  const { displayImage, selectedNode } = useEditorMediaDisplay();
+  const projectName = useEditorStore((s) => s.projectName);
+  const previewDownload = (() => {
+    const fromNode = getNodeMediaInfo(selectedNode);
+    if (fromNode && isDownloadableMediaUrl(fromNode.url)) {
+      return {
+        ...fromNode,
+        filename: defaultDownloadFilename(projectName, fromNode.kind, undefined, fromNode.url),
+      };
+    }
+    if (!isDownloadableMediaUrl(displayImage)) return null;
+    const kind = displayImage.includes(".mp4") ? "video" as const : "image" as const;
+    return {
+      url: displayImage,
+      kind,
+      filename: defaultDownloadFilename(projectName, kind, undefined, displayImage),
+    };
+  })();
 
   useEffect(() => {
     if (!mediaWorkspaceExpanded) return;
@@ -69,6 +90,14 @@ export function MediaWorkspaceOverlay() {
             </button>
           ))}
         </div>
+        {previewTab !== "draw" && previewDownload && (
+          <DownloadMediaButton
+            url={previewDownload.url}
+            kind={previewDownload.kind}
+            filename={previewDownload.filename}
+            label="Download"
+          />
+        )}
         <button
           type="button"
           title="Minimize (Esc)"
@@ -132,6 +161,9 @@ export function MediaWorkspaceOverlay() {
             onSplitChange={
               previewTab === "compare" ? setCompareSplit : setPreviewSplit
             }
+            downloadUrl={previewTab === "preview" ? previewDownload?.url : null}
+            downloadKind={previewDownload?.kind}
+            downloadFilename={previewDownload?.filename}
           />
         )}
       </div>

@@ -8,6 +8,7 @@ import { catalogService } from "@/services/catalog.service";
 import { imageEditSettingsPayload } from "@/lib/image-edit-settings";
 import { upscaleSettingsPayload } from "@/lib/upscale-settings";
 import { videoCreatorSettingsPayload } from "@/lib/video-creator-settings";
+import { isPanelPersistSuppressed } from "@/lib/panel-sync-guard";
 
 /**
  * Write right-panel prompt / model settings into the selected render node
@@ -15,7 +16,6 @@ import { videoCreatorSettingsPayload } from "@/lib/video-creator-settings";
  */
 export function usePersistPanelToNode() {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
-  const nodes = useEditorStore((s) => s.nodes);
   const updateNodeData = useEditorStore((s) => s.updateNodeData);
 
   const {
@@ -40,12 +40,32 @@ export function usePersistPanelToNode() {
       const { data } = await catalogService.list();
       return data;
     },
+    staleTime: 60_000,
   });
 
   const lastKey = useRef<string | null>(null);
+  const skipNextPersist = useRef(false);
+  const prevNodeId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (selectedNodeId !== prevNodeId.current) {
+      prevNodeId.current = selectedNodeId;
+      lastKey.current = null;
+      skipNextPersist.current = true;
+    }
+  }, [selectedNodeId]);
 
   useEffect(() => {
     if (!selectedNodeId) return;
+    if (useUIStore.getState().isCanvasDragging) return;
+    if (isPanelPersistSuppressed()) return;
+
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
+    }
+
+    const nodes = useEditorStore.getState().nodes;
     const node = nodes.find((n) => n.id === selectedNodeId);
     if (!node || (node.type !== "render" && node.type !== "detail")) return;
 
@@ -80,7 +100,20 @@ export function usePersistPanelToNode() {
     });
 
     if (lastKey.current === key) return;
+
+    const d = node.data;
+    const nextModelSlug = model?.slug;
+    const unchanged =
+      (d.positive ?? "") === bottomPrompt &&
+      (d.negative ?? "") === bottomNegativePrompt &&
+      (!nextModelSlug || d.modelSlug === nextModelSlug) &&
+      (!selectedCategorySlug || d.categorySlug === selectedCategorySlug) &&
+      Object.entries(categorySettings).every(
+        ([k, v]) => (d as Record<string, unknown>)[k] === v
+      );
+
     lastKey.current = key;
+    if (unchanged) return;
 
     updateNodeData(selectedNodeId, {
       positive: bottomPrompt,
@@ -97,7 +130,6 @@ export function usePersistPanelToNode() {
     });
   }, [
     selectedNodeId,
-    nodes,
     categories,
     bottomPrompt,
     bottomNegativePrompt,

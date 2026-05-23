@@ -11,6 +11,8 @@ import { ImageEditControls } from "@/components/catalog/image-edit-controls";
 import { UpscaleControls } from "@/components/catalog/upscale-controls";
 import { PromptPresetsPanel } from "@/components/catalog/prompt-presets-panel";
 import { VideoCreatorControls } from "@/components/catalog/video-creator-controls";
+import { CatalogModelsEmpty } from "@/components/catalog/catalog-models-empty";
+import { ModelEnginePanel } from "@/components/catalog/model-engine-panel";
 import { ModelPicker } from "@/components/catalog/model-picker";
 import { ModelTagBadge } from "@/components/catalog/model-tag-badge";
 import { cn } from "@/lib/utils";
@@ -18,8 +20,10 @@ import { getCatalogIcon } from "@/lib/catalog-icons";
 import { useUIStore, type PreviewTab } from "@/store/ui-store";
 import { useEditorStore } from "@/store/editor-store";
 import { catalogService } from "@/services/catalog.service";
+import { defaultDownloadFilename, isDownloadableMediaUrl } from "@/lib/download-media";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { collectCanvasSourceImages } from "@/lib/canvas-input-images";
+import { getNodeMediaInfo, nodeCompareLabel } from "@/lib/node-image-url";
 import { getModelInputRules } from "@/lib/model-input-rules";
 import { RP } from "@/lib/right-panel-typography";
 import type { CatalogModel, CapabilityCategory, ModelPromptPreset } from "@/types";
@@ -84,17 +88,24 @@ export function RightPanel() {
   } = useUIStore();
 
   const previewUrl = useEditorStore((s) => s.previewUrl);
+  const projectName = useEditorStore((s) => s.projectName);
   const nodes = useEditorStore((s) => s.nodes);
   const updateNodeData = useEditorStore((s) => s.updateNodeData);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
-  const { data: categories = [], isLoading } = useQuery({
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["catalog"],
     queryFn: async () => {
       const { data } = await catalogService.list();
       return data;
     },
+    staleTime: 60_000,
   });
 
   const selectedCategory = useMemo(
@@ -113,16 +124,31 @@ export function RightPanel() {
   useEffect(() => {
     if (!categories.length) return;
     if (!selectedCategorySlug) {
-      setSelectedCategory(categories[0].slug);
+      const first = categories[0];
+      setSelectedCategory(first.slug, first.models[0]?.slug ?? null);
     }
   }, [categories, selectedCategorySlug, setSelectedCategory]);
 
   useEffect(() => {
-    if (!selectedCategory?.models.length) return;
-    if (!selectedModelSlug || !selectedCategory.models.some((m) => m.slug === selectedModelSlug)) {
-      setSelectedModel(selectedCategory.models[0].slug);
+    if (!selectedCategory?.models.length || useUIStore.getState().isCanvasDragging) return;
+    if (!selectedModelSlug) return;
+
+    const node = nodes.find((n) => n.id === selectedNodeId);
+    if (node?.type === "render" || node?.type === "detail") return;
+
+    const fallback = selectedCategory.models[0].slug;
+    const valid = selectedCategory.models.some((m) => m.slug === selectedModelSlug);
+    if (!valid && selectedModelSlug !== fallback) {
+      setSelectedModel(fallback);
     }
-  }, [selectedCategory, selectedModelSlug, setSelectedModel]);
+  }, [
+    selectedCategory?.slug,
+    selectedCategorySlug,
+    selectedModelSlug,
+    selectedNodeId,
+    nodes,
+    setSelectedModel,
+  ]);
 
   useEffect(() => {
     if (!selectedCategory) return;
@@ -158,12 +184,49 @@ export function RightPanel() {
     normalizeMediaUrl(sourceNode?.data?.imageUrl as string) ||
     PREVIEW_PLACEHOLDER;
 
+  const previewDownload = (() => {
+    const fromNode = getNodeMediaInfo(selectedNode);
+    if (fromNode && isDownloadableMediaUrl(fromNode.url)) {
+      const label = selectedNode ? nodeCompareLabel(selectedNode) : "preview";
+      return {
+        ...fromNode,
+        filename: defaultDownloadFilename(
+          `${projectName}-${label}`,
+          fromNode.kind,
+          undefined,
+          fromNode.url
+        ),
+      };
+    }
+    const url =
+      normalizeMediaUrl(previewUrl) ||
+      normalizeMediaUrl(selectedPreview) ||
+      normalizeMediaUrl(firstInputPreview);
+    if (!isDownloadableMediaUrl(url)) return null;
+    const kind = url.includes(".mp4") || url.includes(".webm") ? "video" as const : "image" as const;
+    return {
+      url,
+      kind,
+      filename: defaultDownloadFilename(projectName, kind, undefined, url),
+    };
+  })();
+
   const pushPromptToNode = (positive: string, negative?: string) => {
     setBottomPrompt(positive);
     if (negative !== undefined) setBottomNegativePrompt(negative);
+
+    const selected = selectedNodeId
+      ? nodes.find((n) => n.id === selectedNodeId)
+      : undefined;
+    const draftRender = nodes.find(
+      (n) => n.type === "render" && n.data.isDraft === true
+    );
     const targetId =
-      selectedNodeId ||
-      nodes.find((n) => n.type === "render" || n.type === "prompt")?.id;
+      selected?.type === "render" || selected?.type === "detail"
+        ? selected.id
+        : draftRender?.id ??
+          nodes.find((n) => n.type === "render" || n.type === "prompt")?.id;
+
     if (targetId) {
       updateNodeData(targetId, {
         positive,
@@ -172,21 +235,21 @@ export function RightPanel() {
         categorySlug: selectedCategory?.slug,
         inputImages: canvasImages,
       });
+      if (targetId !== selectedNodeId) {
+        useEditorStore.getState().setSelectedNode(targetId);
+      }
     }
   };
 
   const applyPreset = (
     preset: Pick<ModelPromptPreset, "positive_prompt" | "negative_prompt">
   ) => {
-    pushPromptToNode(preset.positive_prompt, preset.negative_prompt);
+    pushPromptToNode(preset.positive_prompt, preset.negative_prompt ?? "");
   };
 
   const selectCategory = (cat: CapabilityCategory) => {
-    setSelectedCategory(cat.slug);
     const first = cat.models[0];
-    if (first) {
-      setSelectedModel(first.slug);
-    }
+    setSelectedCategory(cat.slug, first?.slug ?? null);
     applyCategoryDefaults(cat, first, setBottomPrompt, setBottomNegativePrompt);
   };
 
@@ -209,7 +272,7 @@ export function RightPanel() {
     <aside
       style={{ width }}
       className={cn(
-        "viz-right-panel relative flex shrink-0 flex-col border-l border-border/60 bg-[hsl(220,18%,9%)]",
+        "viz-right-panel relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-border/60 bg-[hsl(220,18%,9%)]",
         isResizing && "select-none"
       )}
     >
@@ -313,6 +376,9 @@ export function RightPanel() {
             : "viz-right-preview-height"
         }
         defaultHeight={previewTab === "compare" ? 320 : 280}
+        downloadUrl={previewTab === "preview" ? previewDownload?.url : null}
+        downloadKind={previewDownload?.kind}
+        downloadFilename={previewDownload?.filename}
       />
       )}
 
@@ -332,7 +398,7 @@ export function RightPanel() {
       </div>
       )}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="viz-right-panel-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain pb-8">
         {selectedModel && inputRules.showPanel && (
           <div className={cn("border-b border-border/60 py-3", RP.pad, RP.body)}>
             <span className={RP.bodyStrong}>{inputRules.label}</span>
@@ -365,9 +431,24 @@ export function RightPanel() {
               <div className="flex items-center justify-center py-6 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
+            ) : isError ? (
+              <div className={RP.empty}>
+                <p>Could not load models.</p>
+                <button
+                  type="button"
+                  className="mt-2 text-sm text-[hsl(var(--viz-cyan))] hover:underline"
+                  onClick={() => void refetch()}
+                >
+                  Retry
+                </button>
+              </div>
             ) : categories.length === 0 ? (
               <p className={RP.empty}>
-                No capabilities configured. Add them in Django admin.
+                No capabilities yet. Restart the backend or run{" "}
+                <code className="rounded bg-secondary px-1 text-xs">
+                  python manage.py seed_catalog
+                </code>
+                .
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
@@ -402,23 +483,34 @@ export function RightPanel() {
           </div>
         </details>
 
-        {selectedCategory?.slug === "image-edit" &&
-        selectedCategory.models.length > 0 ? (
+        {selectedCategory && selectedCategory.models.length === 0 ? (
+          <CatalogModelsEmpty categoryName={selectedCategory.name} />
+        ) : selectedCategory?.slug === "image-edit" ? (
           <ImageEditControls
             models={selectedCategory.models}
             selectedSlug={selectedModel?.slug}
             onSelectModel={selectModel}
           />
-        ) : selectedCategory?.slug === "upscale" &&
-          selectedCategory.models.length > 0 ? (
+        ) : selectedCategory?.slug === "upscale" ? (
           <UpscaleControls
             models={selectedCategory.models}
             selectedSlug={selectedModel?.slug}
             onSelectModel={selectModel}
           />
-        ) : selectedCategory?.slug === "image-to-video" &&
-          selectedCategory.models.length > 0 ? (
+        ) : selectedCategory?.slug === "image-to-video" ? (
           <VideoCreatorControls
+            models={selectedCategory.models}
+            selectedSlug={selectedModel?.slug}
+            onSelectModel={selectModel}
+          />
+        ) : selectedCategory?.slug === "image-generate" ? (
+          <ModelEnginePanel
+            models={selectedCategory.models}
+            selectedSlug={selectedModel?.slug}
+            onSelectModel={selectModel}
+          />
+        ) : selectedCategory?.slug === "3d-model" ? (
+          <ModelEnginePanel
             models={selectedCategory.models}
             selectedSlug={selectedModel?.slug}
             onSelectModel={selectModel}

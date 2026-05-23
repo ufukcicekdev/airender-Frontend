@@ -1,5 +1,5 @@
 import type { Edge } from "@xyflow/react";
-import type { EditorNode } from "@/store/editor-store";
+import { useEditorStore, type EditorNode } from "@/store/editor-store";
 import { inputHandleId } from "@/lib/dynamic-input-handles";
 import type { ModelInputImage, NodeData } from "@/types";
 
@@ -13,6 +13,8 @@ export type MakeAction =
       mode: "create";
       sourceIds: string[];
       anchorSourceId: string;
+      /** Use this finished render's output as the input image (keeps prior node). */
+      branchFromRenderId?: string;
     }
   | {
       mode: "rerun";
@@ -34,6 +36,47 @@ function isCommittedRender(node?: EditorNode): boolean {
   );
 }
 
+/** Finished generation with output — used for UI hints. */
+export function isCompletedRenderNode(node?: EditorNode): boolean {
+  if (!node || !isCommittedRender(node)) return false;
+  const status = node.data.status as string | undefined;
+  return Boolean(
+    node.data.imageUrl ||
+      node.data.videoUrl ||
+      status === "completed" ||
+      status === "failed"
+  );
+}
+
+/** Walk upstream edges to the original source node (for draft slot / metadata). */
+export function findRootSourceIdForRender(
+  renderId: string,
+  nodes: EditorNode[],
+  edges: Edge[]
+): string | undefined {
+  const visited = new Set<string>();
+  let current: string | undefined = renderId;
+
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const parents = edges
+      .filter((e) => e.target === current)
+      .map((e) => nodes.find((n) => n.id === e.source))
+      .filter((n): n is EditorNode => Boolean(n));
+
+    const sourceParent = parents.find((p) => p.type === "source");
+    if (sourceParent) return sourceParent.id;
+
+    const renderParent = parents.find((p) => isCommittedRender(p));
+    if (renderParent) {
+      current = renderParent.id;
+      continue;
+    }
+    break;
+  }
+  return undefined;
+}
+
 /** Finished / in-progress generations from this source (excludes transparent draft). */
 export function countCommittedGenerationsFromSource(
   sourceId: string,
@@ -42,6 +85,19 @@ export function countCommittedGenerationsFromSource(
 ): number {
   return edges.filter((e) => {
     if (e.source !== sourceId) return false;
+    const target = nodes.find((n) => n.id === e.target);
+    return isCommittedRender(target);
+  }).length;
+}
+
+/** Child render nodes wired out of a completed render (for chaining Make). */
+export function countCommittedChildrenFromRender(
+  renderId: string,
+  nodes: EditorNode[],
+  edges: Edge[]
+): number {
+  return edges.filter((e) => {
+    if (e.source !== renderId) return false;
     const target = nodes.find((n) => n.id === e.target);
     return isCommittedRender(target);
   }).length;
@@ -80,11 +136,12 @@ export function findDraftRenderForSource(
 export function resolveMakeAction(
   nodes: EditorNode[],
   edges: Edge[],
-  selectedNodeId: string | null
+  selectedNodeId: string | null,
+  options?: { allowNoSource?: boolean; makeAnchorRenderId?: string | null }
 ): MakeAction {
-  const selected = selectedNodeId
-    ? nodes.find((n) => n.id === selectedNodeId)
-    : undefined;
+  const allowNoSource = options?.allowNoSource ?? false;
+  const focusId = selectedNodeId ?? options?.makeAnchorRenderId ?? null;
+  const selected = focusId ? nodes.find((n) => n.id === focusId) : undefined;
 
   if (selected && isRenderNodeType(selected.type)) {
     const sourceIds = edges
@@ -111,6 +168,25 @@ export function resolveMakeAction(
       }
     }
 
+    // Committed render (incl. completed / idle / failed): always chain from selection.
+    if (isCommittedRender(selected)) {
+      const anchorId =
+        findRootSourceIdForRender(selected.id, nodes, edges) ??
+        edges.find(
+          (e) =>
+            e.target === selected.id &&
+            nodes.find((n) => n.id === e.source)?.type === "source"
+        )?.source ??
+        sourceIds.find((id) => nodes.find((n) => n.id === id)?.type === "source");
+
+      return {
+        mode: "create",
+        sourceIds: anchorId ? [anchorId] : [],
+        anchorSourceId: anchorId ?? "",
+        branchFromRenderId: selected.id,
+      };
+    }
+
     return { mode: "rerun", renderNodeId: selected.id, sourceIds };
   }
 
@@ -127,6 +203,9 @@ export function resolveMakeAction(
   }
 
   if (sourcesWithImage.length === 0) {
+    if (allowNoSource) {
+      return { mode: "create", sourceIds: [], anchorSourceId: "" };
+    }
     return { mode: "invalid", reason: "no_source" };
   }
 
@@ -151,7 +230,8 @@ export function sourceNodesFromIds(
 }
 
 export function buildGenerationRenderNode(options: {
-  sourceNodes: EditorNode[];
+  /** Position anchor — source node or parent render for chained Make. */
+  anchorNode: EditorNode;
   generationIndex: number;
   positive: string;
   negative: string;
@@ -160,9 +240,13 @@ export function buildGenerationRenderNode(options: {
   inputImages: ModelInputImage[];
   modelName?: string;
   isDraft?: boolean;
+  /** When true, place beside parent render (same Y for first child). */
+  chainFromRender?: boolean;
+  /** Original source id(s) stored on the node for draft reposition. */
+  sourceIdsForData?: string[];
 }): EditorNode {
   const {
-    sourceNodes,
+    anchorNode,
     generationIndex,
     positive,
     negative,
@@ -171,16 +255,25 @@ export function buildGenerationRenderNode(options: {
     inputImages,
     modelName,
     isDraft = false,
+    chainFromRender = false,
+    sourceIdsForData = [],
   } = options;
 
-  const anchor = sourceNodes[0];
-  const genNum = isDraft ? 0 : generationIndex + 1;
-  const x = anchor.position.x + GENERATION_X_OFFSET;
-  const y = anchor.position.y + generationIndex * GENERATION_Y_STEP;
+  const parentGen =
+    chainFromRender && typeof anchorNode.data.generationIndex === "number"
+      ? anchorNode.data.generationIndex
+      : 0;
+  const genNum = isDraft
+    ? 0
+    : chainFromRender
+      ? parentGen + 1 + generationIndex
+      : generationIndex + 1;
+  const x = anchorNode.position.x + GENERATION_X_OFFSET;
+  const y = anchorNode.position.y + generationIndex * GENERATION_Y_STEP;
 
   const data: NodeData = {
     label: modelName ? `${modelName}` : `Generate ${generationIndex + 1}`,
-    badge: isDraft ? "·" : String(generationIndex + 1),
+    badge: isDraft ? "·" : String(genNum),
     status: isDraft ? "idle" : "queued",
     isDraft,
     positive,
@@ -189,7 +282,8 @@ export function buildGenerationRenderNode(options: {
     categorySlug: categorySlug ?? undefined,
     inputImages,
     generationIndex: genNum,
-    sourceIds: sourceNodes.map((s) => s.id),
+    sourceIds: sourceIdsForData,
+    ...(chainFromRender ? { parentRenderId: anchorNode.id } : {}),
   };
 
   return {
@@ -210,25 +304,41 @@ export function defaultGenerationPosition(
   };
 }
 
+/** Move draft preview beside source after source drag (skip if user placed draft manually). */
+export function repositionDraftPreviewForSource(sourceId: string): void {
+  const { nodes, edges, setNodePosition } = useEditorStore.getState();
+  const source = nodes.find((n) => n.id === sourceId);
+  const draft = findDraftRenderForSource(sourceId, nodes, edges);
+  if (!source || !draft || draft.data.userPositioned === true) return;
+
+  const slot = countCommittedGenerationsFromSource(sourceId, nodes, edges);
+  setNodePosition(draft.id, defaultGenerationPosition(source, slot));
+}
+
+function edgeStyle(isDraft: boolean) {
+  return {
+    stroke: isDraft
+      ? "hsl(174 72% 46% / 0.45)"
+      : "hsl(174 72% 46% / 0.6)",
+    strokeWidth: 2,
+    ...(isDraft ? { strokeDasharray: "6 4" } : {}),
+  } as const;
+}
+
+/** Wire parent nodes (source or render) into a new render target. */
 export function buildGenerationEdges(
-  sourceNodes: EditorNode[],
+  parentNodes: EditorNode[],
   renderNodeId: string,
   isDraft = false
 ): Edge[] {
   const ts = Date.now();
-  return sourceNodes.map((source, index) => ({
-    id: `e-${source.id}-${renderNodeId}-${ts}-${index}`,
-    source: source.id,
+  return parentNodes.map((parent, index) => ({
+    id: `e-${parent.id}-${renderNodeId}-${ts}-${index}`,
+    source: parent.id,
     target: renderNodeId,
     targetHandle: inputHandleId(index),
     type: "smoothstep",
     animated: !isDraft,
-    style: {
-      stroke: isDraft
-        ? "hsl(174 72% 46% / 0.45)"
-        : "hsl(174 72% 46% / 0.6)",
-      strokeWidth: 2,
-      ...(isDraft ? { strokeDasharray: "6 4" } : {}),
-    },
+    style: edgeStyle(isDraft),
   }));
 }

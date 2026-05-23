@@ -52,7 +52,11 @@ export function VizNodeCard({
   variant = "generation",
 }: VizNodeCardProps) {
   const status = data.status || "idle";
+  const isDraft = data.isDraft === true;
   const isProcessing = status === "processing" || status === "queued";
+  const isCompleted = status === "completed";
+  const hasRenderedOutput =
+    isCompleted && Boolean(data.imageUrl || data.videoUrl) && !isDraft;
   const videoUrl = normalizeMediaUrl(data.videoUrl as string | undefined);
   const imageUrl =
     normalizeMediaUrl((data.imageUrl as string) || previewUrl) || PLACEHOLDER_SKETCH;
@@ -64,7 +68,6 @@ export function VizNodeCard({
     .map((p) => normalizeMediaUrl(p.thumbnailUrl)!);
 
   const modelLabel = String(data.model_name || data.label || "Generation");
-  const isDraft = data.isDraft === true;
 
   return (
     <div
@@ -123,16 +126,24 @@ export function VizNodeCard({
           <img
             src={imageUrl}
             alt=""
+            referrerPolicy="no-referrer"
             className={cn(
               "h-full w-full object-cover",
               isProcessing && "scale-105 blur-[2px] brightness-75",
               isDraft && "opacity-40",
-              dynamicInputs && connectedCount > 0 && !isDraft && "opacity-35"
+              dynamicInputs &&
+                connectedCount > 0 &&
+                !isDraft &&
+                !hasRenderedOutput &&
+                "opacity-35"
             )}
           />
         )}
 
-        {dynamicInputs && connectedThumbs.length > 0 && !isDraft && (
+        {dynamicInputs &&
+          connectedThumbs.length > 0 &&
+          !isDraft &&
+          !hasRenderedOutput && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 p-4 pl-7">
             {connectedThumbs.map((url, i) => (
               <img

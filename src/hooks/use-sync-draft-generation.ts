@@ -71,8 +71,6 @@ function draftSyncFingerprint(
 ): string {
   return JSON.stringify({
     sourceId: source.id,
-    sx: Math.round(source.position.x),
-    sy: Math.round(source.position.y),
     modelSlug,
     categorySlug,
     bottomPrompt,
@@ -91,7 +89,7 @@ function computeCanvasDraftSig(
   const source = resolveDraftSource(nodes, selectedNodeId);
   if (!source) return "";
   const slot = countCommittedGenerationsFromSource(source.id, nodes, edges);
-  return `${source.id}:${source.data?.imageUrl ?? ""}:${Math.round(source.position.x)}:${Math.round(source.position.y)}:${slot}`;
+  return `${source.id}:${source.data?.imageUrl ?? ""}:${slot}`;
 }
 
 /**
@@ -135,6 +133,7 @@ export function useSyncDraftGenerationNode() {
 
   useEffect(() => {
     if (!categories.length) return;
+    if (useUIStore.getState().isCanvasDragging) return;
 
     const { nodes, edges, spawnGeneration, updateNodeData } =
       useEditorStore.getState();
@@ -225,7 +224,7 @@ export function useSyncDraftGenerationNode() {
     const position = defaultGenerationPosition(source, slotIndex);
 
     const node = buildGenerationRenderNode({
-      sourceNodes: [source],
+      anchorNode: source,
       generationIndex: slotIndex,
       positive: bottomPrompt,
       negative: bottomNegativePrompt,
@@ -234,6 +233,7 @@ export function useSyncDraftGenerationNode() {
       inputImages,
       modelName: model.name,
       isDraft: true,
+      sourceIdsForData: [source.id],
     });
     node.id = `draft-preview-${source.id}`;
     node.position = position;

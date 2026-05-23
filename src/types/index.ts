@@ -144,6 +144,10 @@ export interface Project {
   thumbnail: string | null;
   is_template: boolean;
   workflow_id?: string | null;
+  preview_url?: string | null;
+  node_count?: number;
+  last_activity_label?: string;
+  last_activity_summary?: string;
   created_at: string;
   updated_at: string;
 }
@@ -201,6 +205,7 @@ export interface RenderTask {
   node_statuses: Record<string, string>;
   error_message: string;
   images: GeneratedImage[];
+  flow_data?: WorkflowGraph;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;

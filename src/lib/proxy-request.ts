@@ -29,13 +29,30 @@ export async function proxyToBackend(
   });
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
-  const upstream = await fetch(target.toString(), {
+  const fetchOpts: RequestInit = {
     method: req.method,
     headers,
     body: hasBody ? await req.arrayBuffer() : undefined,
     redirect: "manual",
     cache: "no-store",
-  });
+  };
+
+  let upstream = await fetch(target.toString(), fetchOpts);
+
+  // Django APPEND_SLASH returns 301 when the proxy omits a trailing slash (Next normalizes URLs).
+  // Follow one same-origin redirect so the browser gets 200, not a 301 axios won't follow.
+  if (
+    (req.method === "GET" || req.method === "HEAD") &&
+    [301, 302, 307, 308].includes(upstream.status)
+  ) {
+    const location = upstream.headers.get("location");
+    if (location) {
+      const redirectTarget = new URL(location, origin);
+      if (redirectTarget.origin === new URL(origin).origin) {
+        upstream = await fetch(redirectTarget.toString(), fetchOpts);
+      }
+    }
+  }
 
   const responseHeaders = new Headers();
   upstream.headers.forEach((value, key) => {

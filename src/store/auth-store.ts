@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { User } from "@/types";
 import { authService } from "@/services/auth.service";
+import { setWsAccessToken } from "@/services/websocket.service";
 
 interface AuthState {
   user: User | null;
@@ -30,6 +31,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { data } = await authService.me();
       set({ user: data, isAuthenticated: true, isLoading: false });
+      // Access for WebSocket comes from login/refresh responses or the 401 interceptor.
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
@@ -37,12 +39,14 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (email, password) => {
     const { data } = await authService.login({ email, password });
+    setWsAccessToken(data.access ?? null);
     set({ user: data.user, isAuthenticated: true, isLoading: false });
     return data.user;
   },
 
   register: async (payload) => {
     const { data } = await authService.register(payload);
+    setWsAccessToken(data.access ?? null);
     set({ user: data.user, isAuthenticated: true, isLoading: false });
     return data.user;
   },
@@ -51,6 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await authService.logout();
     } finally {
+      setWsAccessToken(null);
       set({ user: null, isAuthenticated: false });
     }
   },

@@ -63,6 +63,8 @@ interface UIState {
   drawTool: DrawTool;
   drawBrushSize: number;
   mediaWorkspaceExpanded: boolean;
+  /** True while a canvas node is being dragged — pauses panel↔node sync loops. */
+  isCanvasDragging: boolean;
   /** Incremented to place a new group at viewport center (FlowCanvas). */
   groupCreateSignal: number;
   requestNewGroup: () => void;
@@ -71,7 +73,8 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   setBottomPrompt: (prompt: string) => void;
   setBottomNegativePrompt: (prompt: string) => void;
-  setSelectedCategory: (slug: string) => void;
+  /** Pass modelSlug to set category + model atomically (avoids Select re-render loops). */
+  setSelectedCategory: (slug: string, modelSlug?: string | null) => void;
   setSelectedModel: (slug: string) => void;
   addModelInputImage: (image: ModelInputImage) => void;
   removeModelInputImage: (id: string) => void;
@@ -99,6 +102,7 @@ interface UIState {
   setDrawTool: (tool: DrawTool) => void;
   setDrawBrushSize: (size: number) => void;
   setMediaWorkspaceExpanded: (expanded: boolean) => void;
+  setCanvasDragging: (dragging: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -132,13 +136,18 @@ export const useUIStore = create<UIState>((set) => ({
   drawTool: "brush",
   drawBrushSize: 24,
   mediaWorkspaceExpanded: false,
+  isCanvasDragging: false,
   setSidebarSection: (sidebarSection) => set({ sidebarSection }),
   setPreviewTab: (previewTab) => set({ previewTab }),
   setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
   setBottomPrompt: (bottomPrompt) => set({ bottomPrompt }),
   setBottomNegativePrompt: (bottomNegativePrompt) => set({ bottomNegativePrompt }),
-  setSelectedCategory: (selectedCategorySlug) =>
-    set({ selectedCategorySlug, selectedModelSlug: null }),
+  setSelectedCategory: (selectedCategorySlug, modelSlug) =>
+    set({
+      selectedCategorySlug,
+      selectedModelSlug:
+        modelSlug !== undefined ? modelSlug : null,
+    }),
   setSelectedModel: (selectedModelSlug) => set({ selectedModelSlug }),
   addModelInputImage: (image) =>
     set((s) => ({ modelInputImages: [...s.modelInputImages, image] })),
@@ -171,6 +180,7 @@ export const useUIStore = create<UIState>((set) => ({
   setDrawBrushSize: (drawBrushSize) => set({ drawBrushSize }),
   setMediaWorkspaceExpanded: (mediaWorkspaceExpanded) =>
     set({ mediaWorkspaceExpanded }),
+  setCanvasDragging: (isCanvasDragging) => set({ isCanvasDragging }),
   groupCreateSignal: 0,
   requestNewGroup: () =>
     set((s) => ({ groupCreateSignal: s.groupCreateSignal + 1 })),

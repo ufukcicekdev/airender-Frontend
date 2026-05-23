@@ -1,7 +1,10 @@
 "use client";
 
 import { GripHorizontal } from "lucide-react";
+import { DownloadMediaButton } from "@/components/editor/download-media-button";
 import { ImageCompareSlider } from "@/components/editor/image-compare-slider";
+import type { MediaKind } from "@/lib/download-media";
+import { isDownloadableMediaUrl } from "@/lib/download-media";
 import { useResizablePaneHeight } from "@/hooks/use-resizable-pane-height";
 import { cn } from "@/lib/utils";
 import type { CompareSlot } from "@/store/ui-store";
@@ -26,6 +29,9 @@ type PreviewMediaPaneProps = {
   storageKey?: string;
   defaultHeight?: number;
   hint?: string;
+  downloadUrl?: string | null;
+  downloadKind?: MediaKind;
+  downloadFilename?: string;
 };
 
 export function PreviewMediaPane({
@@ -39,6 +45,9 @@ export function PreviewMediaPane({
   storageKey = "viz-right-preview-height",
   defaultHeight = 280,
   hint,
+  downloadUrl,
+  downloadKind = "image",
+  downloadFilename,
 }: PreviewMediaPaneProps) {
   const isWorkspace = layout === "workspace";
   const { height, isResizing, startResize, resetHeight } = useResizablePaneHeight(
@@ -62,11 +71,23 @@ export function PreviewMediaPane({
     >
       <div
         className={cn(
-          "overflow-hidden rounded-md border border-border/50 bg-black",
+          "relative overflow-hidden rounded-md border border-border/50 bg-black",
           isWorkspace && "min-h-0 flex-1"
         )}
         style={isWorkspace ? undefined : { height }}
       >
+        {mode === "preview" && isDownloadableMediaUrl(downloadUrl) && (
+          <div className="absolute right-2 top-2 z-10">
+            <DownloadMediaButton
+              url={downloadUrl}
+              kind={downloadKind}
+              filename={downloadFilename}
+              size="icon"
+              variant="secondary"
+              label="Download"
+            />
+          </div>
+        )}
         {showSlider ? (
           <ImageCompareSlider
             imageA={slotA!.imageUrl}

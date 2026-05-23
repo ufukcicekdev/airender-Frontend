@@ -1,5 +1,6 @@
 import type { Edge } from "@xyflow/react";
 import type { EditorNode } from "@/store/editor-store";
+import { isRenderNodeType } from "@/lib/generation-nodes";
 import { parseInputHandleIndex } from "@/lib/dynamic-input-handles";
 import { getNodeMaskDataUrl } from "@/lib/node-draw-mask";
 import type { ModelInputImage } from "@/types";
@@ -40,7 +41,8 @@ export function collectImagesForRenderTarget(
   const images: ModelInputImage[] = [];
   for (const edge of incoming) {
     const source = nodes.find((n) => n.id === edge.source);
-    if (source?.type === "source" && source.data?.imageUrl) {
+    if (!source?.data?.imageUrl) continue;
+    if (source.type === "source" || isRenderNodeType(source.type)) {
       const img = nodeToModelInputImage(source);
       if (img) images.push(img);
     }

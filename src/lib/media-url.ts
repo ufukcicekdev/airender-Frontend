@@ -2,7 +2,7 @@
 export function normalizeMediaUrl(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
   if (url.startsWith("data:")) return url;
-  if (url.includes(".digitaloceanspaces.com")) return url;
+  if (url.includes(".digitaloceanspaces.com") || url.includes(".fal.media")) return url;
   try {
     const parsed = new URL(url, typeof window !== "undefined" ? window.location.origin : undefined);
     if (parsed.pathname.startsWith("/media/")) {

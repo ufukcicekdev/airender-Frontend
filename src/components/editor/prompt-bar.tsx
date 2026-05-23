@@ -4,28 +4,30 @@ import { AlertCircle, Sparkles } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 import { useUIStore } from "@/store/ui-store";
-import { useMakeGeneration } from "@/hooks/use-make-generation";
+import { useExecuteMake } from "@/hooks/use-execute-make";
+import type { WorkflowLoadState } from "@/store/editor-store";
 
 interface PromptBarProps {
-  onMake: (renderNodeId: string) => void;
+  workflowLoadState?: WorkflowLoadState;
+  /** @deprecated use internal executeMake */
+  onMake?: (renderNodeId: string) => void;
 }
 
-export function PromptBar({ onMake }: PromptBarProps) {
+export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
   const { bottomPrompt, setBottomPrompt, setSidebarSection } = useUIStore();
   const user = useAuthStore((s) => s.user);
   const {
-    runMake,
+    executeMake,
     readiness,
     creditCost,
     userCredits,
     canAfford,
     selectedModel,
     selectedCategory,
-  } = useMakeGeneration();
+  } = useExecuteMake();
 
   const handleMake = () => {
-    const renderNodeId = runMake();
-    if (renderNodeId) onMake(renderNodeId);
+    void executeMake();
   };
 
   const showCreditWarning =
@@ -38,10 +40,19 @@ export function PromptBar({ onMake }: PromptBarProps) {
     readiness.reason !== "no_model" &&
     readiness.reason !== "no_credits";
 
-  const makeDisabled = !readiness.canMake;
+  const projectLoading =
+    workflowLoadState === "loading" || workflowLoadState === "idle";
+  const makeDisabled = projectLoading || !readiness.canMake;
 
   return (
     <div className="shrink-0 border-t border-border/60 bg-[hsl(220,18%,8%)] px-4 py-3">
+      {projectLoading ? (
+        <p className="mb-2 text-xs text-muted-foreground">Loading project…</p>
+      ) : workflowLoadState === "error" ? (
+        <p className="mb-2 text-xs text-destructive">
+          Project failed to load — refresh the page or sign in again.
+        </p>
+      ) : null}
       {showCreditWarning ? (
         <div
           role="alert"
@@ -94,9 +105,11 @@ export function PromptBar({ onMake }: PromptBarProps) {
         <button
           type="button"
           onClick={handleMake}
-          disabled={makeDisabled}
+          aria-disabled={makeDisabled}
           title={
-            !selectedModel
+            projectLoading
+              ? "Loading project from server"
+              : !selectedModel
               ? "Select a model in the right panel"
               : !canAfford
                 ? `Requires ${creditCost} credits (${userCredits} available)`

@@ -1,12 +1,8 @@
 import { type NextRequest } from "next/server";
 import { proxyToBackend } from "@/lib/proxy-request";
 
-type RouteContext = { params: Promise<{ path: string[] }> };
-
-async function handle(req: NextRequest, context: RouteContext) {
-  const { path } = await context.params;
-  const segment = path?.length ? path.join("/") : "";
-  return proxyToBackend(req, `/api/${segment}`);
+async function handle(req: NextRequest) {
+  return proxyToBackend(req, req.nextUrl.pathname);
 }
 
 export const GET = handle;

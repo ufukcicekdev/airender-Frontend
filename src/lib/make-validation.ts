@@ -1,14 +1,16 @@
 import type { Edge } from "@xyflow/react";
-import type { EditorNode } from "@/store/editor-store";
+import { useEditorStore, type EditorNode } from "@/store/editor-store";
 import {
   collectImagesForRenderTarget,
   nodeToModelInputImage,
 } from "@/lib/canvas-input-images";
 import {
+  isRenderNodeType,
   resolveMakeAction,
   sourceNodesFromIds,
   type MakeAction,
 } from "@/lib/generation-nodes";
+import { effectiveMakePrompt } from "@/lib/effective-prompt";
 import { getModelInputRules } from "@/lib/model-input-rules";
 import type { CatalogModel, ModelInputImage } from "@/types";
 
@@ -51,6 +53,14 @@ export function collectMakeInputImages(
     return inputImages;
   }
 
+  if (action.branchFromRenderId) {
+    const branch = nodes.find((n) => n.id === action.branchFromRenderId);
+    if (branch && isRenderNodeType(branch.type)) {
+      const fromOutput = nodeToModelInputImage(branch);
+      if (fromOutput) return [fromOutput];
+    }
+  }
+
   return sourceNodesFromIds(nodes, action.sourceIds)
     .map((s) => nodeToModelInputImage(s))
     .filter((img): img is ModelInputImage => img !== null);
@@ -81,13 +91,14 @@ export function evaluateMakeReadiness(options: {
 
   const empty = { inputCount: 0, requiredMin: 0 };
 
-  if (!bottomPrompt.trim()) {
+  if (!effectiveMakePrompt(bottomPrompt, selectedModel)) {
     return {
       ...empty,
       canMake: false,
       reason: "no_prompt",
       title: "Enter a prompt",
-      description: "Write a prompt before running Make.",
+      description:
+        "Type a prompt in the bar below, or pick a model with a default prompt.",
     };
   }
 
@@ -114,7 +125,11 @@ export function evaluateMakeReadiness(options: {
     };
   }
 
-  const action = resolveMakeAction(nodes, edges, selectedNodeId);
+  const rules = getModelInputRules(selectedModel, categorySlug);
+  const action = resolveMakeAction(nodes, edges, selectedNodeId, {
+    allowNoSource: !rules.requiresImages,
+    makeAnchorRenderId: useEditorStore.getState().makeAnchorRenderId,
+  });
 
   if (action.mode === "invalid") {
     return {
@@ -132,8 +147,19 @@ export function evaluateMakeReadiness(options: {
     };
   }
 
-  const inputImages = collectMakeInputImages(nodes, edges, action);
-  const rules = getModelInputRules(selectedModel, categorySlug);
+  let inputImages = collectMakeInputImages(nodes, edges, action);
+  if (
+    !inputImages.length &&
+    action.mode === "rerun" &&
+    rules.requiresImages &&
+    selectedNodeId
+  ) {
+    const target = nodes.find((n) => n.id === selectedNodeId);
+    const stored = target?.data?.inputImages;
+    if (Array.isArray(stored) && stored.length) {
+      inputImages = stored as ModelInputImage[];
+    }
+  }
   const requiredMin = rules.requiresImages
     ? Math.max(rules.min, 1)
     : rules.min;

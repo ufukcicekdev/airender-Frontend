@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { setWsAccessToken } from "@/services/websocket.service";
 import { getBackendOrigin } from "@/lib/backend-url";
 
 /** Browser: same-origin /api proxy (cookies, no CORS). SSR: direct backend URL. */
@@ -44,7 +45,17 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const url = originalRequest.url ?? "";
+    const isAuthEndpoint =
+      url.includes("/auth/login") ||
+      url.includes("/auth/register") ||
+      url.includes("/auth/refresh");
+
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -55,7 +66,8 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh");
+        const { data } = await api.post<{ access?: string }>("/auth/refresh");
+        if (data?.access) setWsAccessToken(data.access);
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {

@@ -1,6 +1,22 @@
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
+const WS_TOKEN_KEY = "vizmake_ws_access";
 
 import type { FlowData } from "@/types/flow-graph";
+
+/** Short-lived access token for WebSocket (HttpOnly cookie is not sent to :8000 from :3000). */
+export function setWsAccessToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (token) sessionStorage.setItem(WS_TOKEN_KEY, token);
+  else sessionStorage.removeItem(WS_TOKEN_KEY);
+}
+
+function wsRenderUrl(taskId: string): string {
+  const base = `${WS_URL}/ws/render/${taskId}/`;
+  if (typeof window === "undefined") return base;
+  const token = sessionStorage.getItem(WS_TOKEN_KEY);
+  if (!token) return base;
+  return `${base}?token=${encodeURIComponent(token)}`;
+}
 
 export type RenderUpdatePayload = {
   task_id: string;
@@ -19,7 +35,7 @@ export function subscribeRender(
   onMessage: (payload: RenderUpdatePayload) => void,
   onError?: (error: Event) => void
 ): () => void {
-  const ws = new WebSocket(`${WS_URL}/ws/render/${taskId}/`);
+  const ws = new WebSocket(wsRenderUrl(taskId));
 
   ws.onmessage = (event) => {
     try {

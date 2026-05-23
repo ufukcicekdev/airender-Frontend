@@ -3,7 +3,7 @@ import type { PaginatedResponse } from "@/lib/api-utils";
 import { unwrapList } from "@/lib/api-utils";
 import { api } from "./api";
 
-/** DRF router with trailing_slash=False */
+/** Backend: /api/projects (list/create) and /api/projects/:id (detail) */
 const P = "/projects";
 
 export const projectService = {
@@ -14,7 +14,7 @@ export const projectService = {
 
   get: (id: string) => api.get<Project>(`${P}/${id}`),
 
-  create: (data: { name: string; description?: string }) =>
+  create: (data: { name?: string; description?: string } = {}) =>
     api.post<Project>(P, data),
 
   update: (id: string, data: Partial<Project>) =>

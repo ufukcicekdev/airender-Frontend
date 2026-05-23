@@ -37,7 +37,8 @@ export function PanelSettingRow({
         onValueChange={onValueChange}
         options={options}
         size="panel"
-        triggerClassName="h-10 w-[148px] shrink-0 border-border/50 bg-[hsl(220,16%,11%)] text-sm"
+        className="w-[148px] shrink-0"
+        triggerClassName="border-border/50 bg-[hsl(220,16%,11%)] text-sm"
       />
     </div>
   );

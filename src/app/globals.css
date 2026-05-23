@@ -115,6 +115,10 @@
   line-height: 1.5;
 }
 
+.viz-right-panel .viz-right-panel-scroll {
+  scrollbar-gutter: stable;
+}
+
 .viz-right-panel .text-muted-foreground {
   color: hsl(215 14% 62%);
 }
