@@ -1,4 +1,5 @@
 import type { MediaKind } from "@/lib/download-media";
+import { looksLikeVideoUrl } from "@/lib/media-kind";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import type { EditorNode } from "@/store/editor-store";
 
@@ -24,7 +25,14 @@ export function getNodeMediaInfo(node: EditorNode | undefined): NodeMediaInfo | 
     (d.thumbnailUrl as string);
   if (!imageRaw) return null;
   const url = normalizeMediaUrl(String(imageRaw));
-  return url ? { url, kind: "image" } : null;
+  if (!url) return null;
+  const kind: MediaKind =
+    looksLikeVideoUrl(url) ||
+    String(d.outputType || "").toLowerCase() === "video" ||
+    d.categorySlug === "image-to-video"
+      ? "video"
+      : "image";
+  return { url, kind };
 }
 
 export function nodeCompareLabel(node: EditorNode): string {

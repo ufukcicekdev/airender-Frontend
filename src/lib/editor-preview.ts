@@ -1,7 +1,11 @@
 import { collectCanvasSourceImages } from "@/lib/canvas-input-images";
+import type { MediaKind } from "@/lib/download-media";
 import { getNodeMediaInfo } from "@/lib/node-image-url";
+import { inferMediaKind } from "@/lib/media-kind";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import type { EditorNode } from "@/store/editor-store";
+
+export type EditorPreviewMedia = { url: string; kind: MediaKind };
 
 /** Preview image for the right panel — selected node wins over stale global previewUrl. */
 export function resolveEditorDisplayImage(
@@ -46,6 +50,30 @@ export function resolveEditorDisplayImage(
   if (sourceUrl) return sourceUrl;
 
   return placeholder;
+}
+
+/** Preview URL + image vs video for the right panel. */
+export function resolveEditorPreviewMedia(
+  previewUrl: string | null,
+  selectedNode: EditorNode | undefined,
+  nodes: EditorNode[],
+  placeholder: string
+): EditorPreviewMedia {
+  const fromNode = getNodeMediaInfo(selectedNode);
+  if (fromNode?.url) {
+    return { url: fromNode.url, kind: fromNode.kind };
+  }
+
+  const url = resolveEditorDisplayImage(
+    previewUrl,
+    selectedNode,
+    nodes,
+    placeholder
+  );
+  return {
+    url,
+    kind: inferMediaKind(url, selectedNode),
+  };
 }
 
 /** Progress bar for the selected render node (not a stale global 0% after another task finished). */

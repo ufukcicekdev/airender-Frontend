@@ -82,7 +82,7 @@ export function RightPanel() {
   const updateNodeData = useEditorStore((s) => s.updateNodeData);
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
-  const { displayImage, displayProgress } = useEditorMediaDisplay();
+  const { displayImage, previewMedia, displayProgress } = useEditorMediaDisplay();
 
   const {
     data: categories = [],
@@ -335,6 +335,7 @@ export function RightPanel() {
       <PreviewMediaPane
         mode={previewTab === "compare" ? "compare" : "preview"}
         singleImage={displayImage}
+        singleMediaKind={previewMedia.kind}
         slotA={compareSlotA}
         slotB={compareSlotB}
         split={previewTab === "compare" ? compareSplit : previewSplit}

@@ -57,7 +57,14 @@ export function VizNodeCard({
   const isCompleted = status === "completed";
   const hasRenderedOutput =
     isCompleted && Boolean(data.imageUrl || data.videoUrl) && !isDraft;
-  const videoUrl = normalizeMediaUrl(data.videoUrl as string | undefined);
+  const videoUrl =
+    normalizeMediaUrl(data.videoUrl as string | undefined) ||
+    (String(data.outputType || "").toLowerCase() === "video" ||
+    data.categorySlug === "image-to-video"
+      ? normalizeMediaUrl(
+          (data.url as string) || (data.imageUrl as string) || undefined
+        )
+      : undefined);
   const imageUrl =
     normalizeMediaUrl((data.imageUrl as string) || previewUrl) || PLACEHOLDER_SKETCH;
   const showVideo = Boolean(videoUrl);

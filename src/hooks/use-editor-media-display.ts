@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
 import {
-  resolveEditorDisplayImage,
+  resolveEditorPreviewMedia,
   resolveSelectedRenderProgress,
 } from "@/lib/editor-preview";
 
@@ -25,9 +25,9 @@ export function useEditorMediaDisplay() {
   const renderProgress = useUIStore((s) => s.renderProgress);
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
 
-  const displayImage = useMemo(
+  const previewMedia = useMemo(
     () =>
-      resolveEditorDisplayImage(
+      resolveEditorPreviewMedia(
         previewUrl,
         selectedNode,
         nodes,
@@ -41,5 +41,10 @@ export function useEditorMediaDisplay() {
     [selectedNode, renderProgress]
   );
 
-  return { displayImage, displayProgress, selectedNode };
+  return {
+    displayImage: previewMedia.url,
+    previewMedia,
+    displayProgress,
+    selectedNode,
+  };
 }

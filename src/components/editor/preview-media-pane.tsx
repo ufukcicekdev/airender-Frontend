@@ -5,6 +5,7 @@ import { DownloadMediaButton } from "@/components/editor/download-media-button";
 import { ImageCompareSlider } from "@/components/editor/image-compare-slider";
 import type { MediaKind } from "@/lib/download-media";
 import { isDownloadableMediaUrl } from "@/lib/download-media";
+import { looksLikeVideoUrl } from "@/lib/media-kind";
 import { useResizablePaneHeight } from "@/hooks/use-resizable-pane-height";
 import { cn } from "@/lib/utils";
 import type { CompareSlot } from "@/store/ui-store";
@@ -22,6 +23,7 @@ type PreviewMediaPaneProps = {
   layout?: "panel" | "workspace";
   mode: "preview" | "compare";
   singleImage: string;
+  singleMediaKind?: MediaKind;
   slotA: CompareSlot | null;
   slotB: CompareSlot | null;
   split: number;
@@ -38,6 +40,7 @@ export function PreviewMediaPane({
   layout = "panel",
   mode,
   singleImage,
+  singleMediaKind = "image",
   slotA,
   slotB,
   split,
@@ -97,6 +100,19 @@ export function PreviewMediaPane({
             split={split}
             onSplitChange={onSplitChange}
             className="h-full min-h-[200px]"
+          />
+        ) : singleMediaKind === "video" && looksLikeVideoUrl(singleImage) ? (
+          <video
+            key={singleImage}
+            src={singleImage}
+            controls
+            playsInline
+            loop
+            muted
+            className={cn(
+              "w-full object-contain",
+              isWorkspace ? "h-full min-h-[200px]" : "h-full"
+            )}
           />
         ) : (
           /* eslint-disable-next-line @next/next/no-img-element */

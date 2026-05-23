@@ -36,7 +36,7 @@ export function MediaWorkspaceOverlay() {
     setCompareSlotA,
     setCompareSlotB,
   } = useUIStore();
-  const { displayImage, selectedNode } = useEditorMediaDisplay();
+  const { displayImage, previewMedia, selectedNode } = useEditorMediaDisplay();
   const projectName = useEditorStore((s) => s.projectName);
   const previewDownload = (() => {
     const fromNode = getNodeMediaInfo(selectedNode);
@@ -155,6 +155,7 @@ export function MediaWorkspaceOverlay() {
             layout="workspace"
             mode={previewTab === "compare" ? "compare" : "preview"}
             singleImage={displayImage}
+            singleMediaKind={previewMedia.kind}
             slotA={compareSlotA}
             slotB={compareSlotB}
             split={previewTab === "compare" ? compareSplit : previewSplit}
