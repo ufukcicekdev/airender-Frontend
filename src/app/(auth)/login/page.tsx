@@ -61,7 +61,9 @@ export default function LoginPage() {
             F
           </div>
           <h1 className="text-2xl font-bold">Welcome back to {APP_NAME}</h1>
-          <p className="text-sm text-muted-foreground">Sign in to open the node editor</p>
+          <p className="text-sm text-muted-foreground">
+            Sign in with your assigned account to open the node editor
+          </p>
         </div>
 
         <div className="mb-4 rounded-lg border border-[hsl(var(--viz-cyan)/0.25)] bg-[hsl(var(--viz-cyan)/0.08)] p-3 text-xs">
@@ -119,10 +121,7 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          No account?{" "}
-          <Link href="/signup" className="text-[hsl(var(--viz-cyan))] hover:underline">
-            Sign up
-          </Link>
+          Access is invite-only. Contact us if you need an account.
         </p>
       </div>
     </div>

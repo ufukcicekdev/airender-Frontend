@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { SidebarPanelShell } from "@/components/sidebar/sidebar-panel-shell";
 import { APP_NAME } from "@/lib/brand";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 
 const STEPS = [
   {
@@ -30,13 +31,19 @@ const STEPS = [
   {
     icon: Sparkles,
     title: "Make",
-    body: "Click Make (or ⌘ Enter). Credits are shown before each run — buy a pack when you need more.",
+    body: SHOW_CREDITS_UI
+      ? "Click Make (or ⌘ Enter). Credits are shown before each run — buy a pack when you need more."
+      : "Click Make (or ⌘ Enter) to queue your generation.",
   },
-  {
-    icon: Coins,
-    title: "Pay as you go",
-    body: "New accounts get trial credits. Purchase 100 / 250 / 500 credit packs from Account — no subscription.",
-  },
+  ...(SHOW_CREDITS_UI
+    ? [
+        {
+          icon: Coins,
+          title: "Pay as you go",
+          body: "New accounts get trial credits. Purchase 100 / 250 / 500 credit packs from Account — no subscription.",
+        },
+      ]
+    : []),
   {
     icon: MousePointerClick,
     title: "Shortcuts",

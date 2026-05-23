@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCredits } from "@/lib/utils";
 import { APP_NAME } from "@/lib/brand";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -26,12 +27,16 @@ const NAV = [
     icon: FolderOpen,
     match: (p: string) => p.startsWith("/dashboard"),
   },
-  {
-    href: "/account",
-    label: "Account",
-    icon: CreditCard,
-    match: (p: string) => p.startsWith("/account"),
-  },
+  ...(SHOW_CREDITS_UI
+    ? [
+        {
+          href: "/account",
+          label: "Account",
+          icon: CreditCard,
+          match: (p: string) => p.startsWith("/account"),
+        },
+      ]
+    : []),
 ] as const;
 
 type AppShellProps = {
@@ -88,7 +93,7 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
-            {user != null && (
+            {SHOW_CREDITS_UI && user != null && (
               <div className="flex items-center gap-1.5 rounded-full border border-border/50 bg-white/5 px-3 py-1 text-xs text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-amber-400" />
                 <span>{formatCredits(user.credits ?? 0)} credits</span>
@@ -142,7 +147,8 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
             </nav>
             {user != null && (
               <p className="mt-3 px-3 text-xs text-muted-foreground">
-                {user.username} · {formatCredits(user.credits ?? 0)} credits
+                {user.username}
+                {SHOW_CREDITS_UI ? ` · ${formatCredits(user.credits ?? 0)} credits` : ""}
               </p>
             )}
             <Button
@@ -184,9 +190,11 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
             <Link href="/dashboard" className="hover:text-foreground">
               Projects
             </Link>
-            <Link href="/account" className="hover:text-foreground">
-              Account
-            </Link>
+            {SHOW_CREDITS_UI ? (
+              <Link href="/account" className="hover:text-foreground">
+                Account
+              </Link>
+            ) : null}
           </div>
         </div>
       </footer>

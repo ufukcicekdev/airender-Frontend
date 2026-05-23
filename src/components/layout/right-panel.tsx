@@ -16,6 +16,7 @@ import { ModelEnginePanel } from "@/components/catalog/model-engine-panel";
 import { ModelPicker } from "@/components/catalog/model-picker";
 import { ModelTagBadge } from "@/components/catalog/model-tag-badge";
 import { cn } from "@/lib/utils";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 import { getCatalogIcon } from "@/lib/catalog-icons";
 import { useUIStore, type PreviewTab } from "@/store/ui-store";
 import { useEditorStore } from "@/store/editor-store";
@@ -514,7 +515,8 @@ export function RightPanel() {
                   </span>
                   <span className="mt-2 block">{selectedModel.description}</span>
                   <span className={cn("mt-2 block", RP.metaAccent)}>
-                    {selectedModel.credit_cost} credits · {selectedModel.provider || "local"}
+                    {SHOW_CREDITS_UI ? `${selectedModel.credit_cost} credits · ` : ""}
+                    {selectedModel.provider || "local"}
                   </span>
                 </p>
               )}

@@ -13,6 +13,7 @@ import { SidebarPanelShell } from "@/components/sidebar/sidebar-panel-shell";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
 import { useUIStore } from "@/store/ui-store";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 
 const SHORTCUTS = [
   { keys: "⌘ S", action: "Save workflow" },
@@ -73,19 +74,33 @@ export function SettingsPanel({ onClose, className }: SettingsPanelProps) {
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Account
         </h3>
-        <button
-          type="button"
-          onClick={() => setSidebarSection("account")}
-          className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 text-left transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
-        >
-          <CreditCard className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
-          <div>
-            <p className="font-medium">Credits & billing</p>
-            <p className="text-sm text-muted-foreground">
-              Balance: {user?.credits?.toLocaleString() ?? 0} credits
-            </p>
-          </div>
-        </button>
+        {SHOW_CREDITS_UI ? (
+          <button
+            type="button"
+            onClick={() => setSidebarSection("account")}
+            className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 text-left transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
+          >
+            <CreditCard className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
+            <div>
+              <p className="font-medium">Credits & billing</p>
+              <p className="text-sm text-muted-foreground">
+                Balance: {user?.credits?.toLocaleString() ?? 0} credits
+              </p>
+            </div>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setSidebarSection("account")}
+            className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 text-left transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
+          >
+            <User className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
+            <div>
+              <p className="font-medium">Account</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            </div>
+          </button>
+        )}
         <Link
           href="/dashboard"
           className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
@@ -96,16 +111,18 @@ export function SettingsPanel({ onClose, className }: SettingsPanelProps) {
             <p className="text-sm text-muted-foreground">Open project dashboard</p>
           </div>
         </Link>
-        <Link
-          href="/account"
-          className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
-        >
-          <User className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
-          <div>
-            <p className="font-medium">Full account page</p>
-            <p className="text-sm text-muted-foreground">Billing in a dedicated view</p>
-          </div>
-        </Link>
+        {SHOW_CREDITS_UI ? (
+          <Link
+            href="/account"
+            className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
+          >
+            <User className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
+            <div>
+              <p className="font-medium">Full account page</p>
+              <p className="text-sm text-muted-foreground">Billing in a dedicated view</p>
+            </div>
+          </Link>
+        ) : null}
       </section>
 
       <div className="mt-8 border-t border-border/40 pt-6">

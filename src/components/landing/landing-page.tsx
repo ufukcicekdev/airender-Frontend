@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { APP_DEMO_EMAIL, APP_NAME } from "@/lib/brand";
 import { LandingHeader } from "./landing-header";
-import { PricingSection } from "./pricing-section";
+// import { PricingSection } from "./pricing-section";
 
 const FEATURES = [
   {
@@ -99,15 +99,10 @@ export function LandingPage() {
               prompts from your dashboard, then ship renders in minutes.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/signup">
-                <Button size="lg" className="gap-2 px-8">
-                  Create free account
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="px-8">
+                <Button size="lg" className="gap-2 px-8">
                   Log in
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -197,9 +192,9 @@ export function LandingPage() {
               <p className="mt-4 text-muted-foreground">
                 A simple flow from idea to output—no code required for artists and viz teams.
               </p>
-              <Link href="/signup" className="mt-8 inline-block">
+              <Link href="/login" className="mt-8 inline-block">
                 <Button className="gap-2">
-                  Try it free <ArrowRight className="h-4 w-4" />
+                  Log in <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -223,23 +218,19 @@ export function LandingPage() {
         </div>
       </section>
 
-      <PricingSection />
+      {/* Pricing hidden — manual billing */}
+      {/* <PricingSection /> */}
 
       {/* CTA */}
       <section className="border-t border-border/40 py-24">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
           <h2 className="text-3xl font-bold tracking-tight">Ready to open the editor?</h2>
           <p className="mt-4 text-muted-foreground">
-            Register in seconds, or log in with the demo account to explore the full workflow.
+            Log in with your assigned account to explore the full workflow.
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/signup">
-              <Button size="lg" className="w-full sm:w-auto">
-                Register
-              </Button>
-            </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto">
                 Log in
               </Button>
             </Link>
@@ -255,12 +246,6 @@ export function LandingPage() {
             <Link href="/login" className="hover:text-foreground">
               Log in
             </Link>
-            <Link href="/signup" className="hover:text-foreground">
-              Register
-            </Link>
-            <a href="#pricing" className="hover:text-foreground">
-              Pricing
-            </a>
             <Link href="/dashboard" className="hover:text-foreground">
               Dashboard
             </Link>

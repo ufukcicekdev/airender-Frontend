@@ -2,6 +2,7 @@
 
 import { AlertCircle, Sparkles } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 import { useAuthStore } from "@/store/auth-store";
 import { useUIStore } from "@/store/ui-store";
 import { useExecuteMake } from "@/hooks/use-execute-make";
@@ -31,7 +32,7 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
   };
 
   const showCreditWarning =
-    Boolean(selectedModel) && readiness.reason === "no_credits";
+    SHOW_CREDITS_UI && Boolean(selectedModel) && readiness.reason === "no_credits";
   const showInputWarning =
     Boolean(selectedModel) &&
     canAfford &&
@@ -77,6 +78,19 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
             </button>
           </div>
         </div>
+      ) : !SHOW_CREDITS_UI && Boolean(selectedModel) && readiness.reason === "no_credits" ? (
+        <div
+          role="alert"
+          className="mb-2.5 flex items-start gap-2.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3.5 py-2.5 text-sm text-amber-100"
+        >
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" />
+          <div className="min-w-0 flex-1 leading-snug">
+            <p className="font-semibold text-amber-50">Unable to run</p>
+            <p className="mt-0.5 text-amber-100/90">
+              Contact your administrator to continue using this account.
+            </p>
+          </div>
+        </div>
       ) : null}
 
       {showInputWarning ? (
@@ -110,12 +124,16 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
             projectLoading
               ? "Loading project from server"
               : !selectedModel
-              ? "Select a model in the right panel"
-              : !canAfford
-                ? `Requires ${creditCost} credits (${userCredits} available)`
-                : !readiness.canMake
-                  ? readiness.description
-                  : `Run for ${creditCost} credits`
+                ? "Select a model in the right panel"
+                : !canAfford
+                  ? SHOW_CREDITS_UI
+                    ? `Requires ${creditCost} credits (${userCredits} available)`
+                    : "Contact your administrator"
+                  : !readiness.canMake
+                    ? readiness.description
+                    : SHOW_CREDITS_UI
+                      ? `Run for ${creditCost} credits`
+                      : "Run generation"
           }
           className={cn(
             "flex min-w-[120px] flex-col items-center justify-center gap-1 px-5 transition-opacity",
@@ -130,13 +148,17 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
           </span>
           <span className="text-center text-xs leading-tight opacity-95">
             {selectedModel ? (
-              <>
-                <span className="font-semibold">{formatCredits(creditCost)}</span>
-                <span className="opacity-80"> cr · </span>
-                <span className="opacity-80">
-                  {formatCredits(user?.credits ?? userCredits)} left
-                </span>
-              </>
+              SHOW_CREDITS_UI ? (
+                <>
+                  <span className="font-semibold">{formatCredits(creditCost)}</span>
+                  <span className="opacity-80"> cr · </span>
+                  <span className="opacity-80">
+                    {formatCredits(user?.credits ?? userCredits)} left
+                  </span>
+                </>
+              ) : (
+                <span className="opacity-80">{selectedModel.name}</span>
+              )
             ) : (
               <span className="opacity-80">Select model</span>
             )}

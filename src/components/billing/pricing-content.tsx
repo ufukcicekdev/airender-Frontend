@@ -1,32 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/format-price";
 import { billingService } from "@/services/billing.service";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/auth-store";
-import { useToast } from "@/hooks/use-toast";
-import type { CreditPack } from "@/types";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 
 interface PricingContentProps {
-  /** Show purchase actions (account). If false, CTAs link to signup/login. */
-  interactive?: boolean;
   className?: string;
 }
 
-export function PricingContent({
-  interactive = false,
-  className,
-}: PricingContentProps) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const fetchUser = useAuthStore((s) => s.fetchUser);
-  const { toast } = useToast();
-  const [loadingPackSlug, setLoadingPackSlug] = useState<string | null>(null);
-
+export function PricingContent({ className }: PricingContentProps) {
+  if (!SHOW_CREDITS_UI) {
+    return null;
+  }
   const { data, isLoading } = useQuery({
     queryKey: ["pricing"],
     queryFn: async () => {
@@ -37,23 +25,6 @@ export function PricingContent({
 
   const settings = data?.settings;
   const creditPacks = data?.credit_packs ?? [];
-
-  const handlePurchasePack = async (pack: CreditPack) => {
-    if (!interactive) return;
-    setLoadingPackSlug(pack.slug);
-    try {
-      const { data: result } = await billingService.purchaseCredits(pack.slug);
-      await fetchUser();
-      toast({
-        title: "Credits added",
-        description: `+${result.credits_added.toLocaleString()} credits. Balance: ${result.credits_balance.toLocaleString()}`,
-      });
-    } catch {
-      toast({ title: "Purchase failed", variant: "destructive" });
-    } finally {
-      setLoadingPackSlug(null);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -78,11 +49,11 @@ export function PricingContent({
           Pay as you go
         </p>
         <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-          {settings?.credits_section_title ?? "Buy credits"}
+          {settings?.credits_section_title ?? "Credit packs"}
         </h2>
         <p className="mt-4 text-muted-foreground">
           {settings?.credits_section_description ??
-            "No subscription — buy credits when you need them. Packs never expire."}
+            "Pay as you go — no subscription. Contact us to add credits to your account."}
         </p>
       </div>
 
@@ -119,7 +90,7 @@ export function PricingContent({
               {pack.total_credits.toLocaleString()} credits · one-time purchase
             </p>
             {pack.features.length > 0 && (
-              <ul className="mt-4 mb-6 flex-1 space-y-2">
+              <ul className="mt-4 flex-1 space-y-2">
                 {pack.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-muted-foreground">
                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[hsl(var(--viz-cyan))]" />
@@ -127,22 +98,6 @@ export function PricingContent({
                   </li>
                 ))}
               </ul>
-            )}
-            {interactive && isAuthenticated ? (
-              <button
-                type="button"
-                disabled={loadingPackSlug === pack.slug}
-                onClick={() => handlePurchasePack(pack)}
-                className="mt-auto w-full rounded-lg bg-[hsl(var(--viz-cyan))] py-2.5 text-sm font-semibold text-[hsl(220,25%,6%)] hover:opacity-90 disabled:opacity-50"
-              >
-                {loadingPackSlug === pack.slug ? "Processing…" : "Buy credits"}
-              </button>
-            ) : (
-              <Link href={isAuthenticated ? "/account" : "/signup"} className="mt-auto">
-                <Button variant="outline" className="w-full">
-                  {isAuthenticated ? "Buy in account" : "Sign up to buy"}
-                </Button>
-              </Link>
             )}
           </div>
         ))}

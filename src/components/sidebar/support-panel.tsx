@@ -4,23 +4,30 @@ import Link from "next/link";
 import { ExternalLink, Mail, MessageCircle } from "lucide-react";
 import { SidebarPanelShell } from "@/components/sidebar/sidebar-panel-shell";
 import { APP_NAME, APP_SUPPORT_EMAIL } from "@/lib/brand";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 
 const FAQ = [
-  {
-    q: "How do credits work?",
-    a: "Each Make deducts credits based on the model and settings (resolution, video length). The cost is shown before you run. Buy packs anytime — they never expire.",
-  },
+  ...(SHOW_CREDITS_UI
+    ? [
+        {
+          q: "How do credits work?",
+          a: "Each Make deducts credits based on the model and settings (resolution, video length). The cost is shown before you run. Buy packs anytime — they never expire.",
+        },
+        {
+          q: "How do I get more credits?",
+          a: "Open Account in the sidebar and buy a 100, 250, or 500 credit pack. New users receive a small trial balance on signup.",
+        },
+      ]
+    : []),
   {
     q: "Why did my render fail?",
-    a: "Check the error in History. Common causes: missing source image, insufficient credits, or an invalid model setting. Credits are still deducted only for completed queue submissions — check your balance after failures.",
+    a: SHOW_CREDITS_UI
+      ? "Check the error in History. Common causes: missing source image, insufficient credits, or an invalid model setting. Credits are still deducted only for completed queue submissions — check your balance after failures."
+      : "Check the error in History. Common causes: missing source image or an invalid model setting. Contact support if the issue persists.",
   },
   {
     q: "Can I use my own API keys?",
     a: `${APP_NAME} runs generations through our Fal.ai integration. Custom API keys are not required for standard use.`,
-  },
-  {
-    q: "How do I get more credits?",
-    a: "Open Account in the sidebar and buy a 100, 250, or 500 credit pack. New users receive a small trial balance on signup.",
   },
 ];
 

@@ -13,6 +13,7 @@ import {
 } from "@/lib/video-creator-settings";
 import { useUIStore } from "@/store/ui-store";
 import type { CatalogModel } from "@/types";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 
 interface VideoCreatorControlsProps {
   models: CatalogModel[];
@@ -41,8 +42,12 @@ export function VideoCreatorControls({
       <EngineSelect models={models} selectedSlug={selectedSlug} onSelect={onSelectModel} />
       {selected ? (
         <p className="px-4 pb-2 text-sm leading-snug text-muted-foreground">
-          <span className="text-[hsl(var(--viz-cyan))]">{selected.credit_cost} credits</span>
-          {" · "}
+          {SHOW_CREDITS_UI ? (
+            <>
+              <span className="text-[hsl(var(--viz-cyan))]">{selected.credit_cost} credits</span>
+              {" · "}
+            </>
+          ) : null}
           {selected.provider || "local"}
         </p>
       ) : null}

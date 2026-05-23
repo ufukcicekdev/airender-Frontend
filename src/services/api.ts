@@ -1,4 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { isPublicAppPath } from "@/lib/public-routes";
 import { setWsAccessToken } from "@/services/websocket.service";
 import { getBackendOrigin } from "@/lib/backend-url";
 
@@ -73,7 +74,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError as Error);
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          const path = window.location.pathname;
+          if (!isPublicAppPath(path)) {
+            window.location.href = "/login";
+          }
         }
         return Promise.reject(refreshError);
       } finally {

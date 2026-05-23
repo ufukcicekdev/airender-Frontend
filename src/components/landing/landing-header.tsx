@@ -8,11 +8,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
 import { APP_NAME } from "@/lib/brand";
+import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
+  ...(SHOW_CREDITS_UI ? [{ href: "#pricing", label: "Pricing" as const }] : []),
   { href: "#workflow", label: "Workflow" },
 ];
 
@@ -61,11 +62,13 @@ export function LandingHeader() {
                   Projects
                 </Button>
               </Link>
-              <Link href="/account">
-                <Button variant="ghost" size="sm">
-                  Account
-                </Button>
-              </Link>
+              {SHOW_CREDITS_UI ? (
+                <Link href="/account">
+                  <Button variant="ghost" size="sm">
+                    Account
+                  </Button>
+                </Link>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -80,12 +83,7 @@ export function LandingHeader() {
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="sm">Get started</Button>
+                <Button size="sm">Log in</Button>
               </Link>
             </>
           )}
@@ -125,11 +123,13 @@ export function LandingHeader() {
                   Projects
                 </Button>
               </Link>
-              <Link href="/account" onClick={() => setOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Account
-                </Button>
-              </Link>
+              {SHOW_CREDITS_UI ? (
+                <Link href="/account" onClick={() => setOpen(false)}>
+                  <Button variant="outline" className="w-full">
+                    Account
+                  </Button>
+                </Link>
+              ) : null}
               <Button
                 type="button"
                 variant="ghost"
@@ -143,12 +143,7 @@ export function LandingHeader() {
           ) : (
             <>
               <Link href="/login" onClick={() => setOpen(false)}>
-                <Button variant="outline" className="w-full">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/signup" onClick={() => setOpen(false)}>
-                <Button className="w-full">Get started</Button>
+                <Button className="w-full">Log in</Button>
               </Link>
             </>
           )}
