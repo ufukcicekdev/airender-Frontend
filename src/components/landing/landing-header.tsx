@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -35,9 +36,9 @@ export function LandingHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--viz-cyan))] text-sm font-bold text-[hsl(220,25%,6%)]">
-            V
+            F
           </span>
-          <span className="text-lg font-semibold tracking-tight">Vizmake</span>
+          <span className="text-lg font-semibold tracking-tight">{APP_NAME}</span>
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">

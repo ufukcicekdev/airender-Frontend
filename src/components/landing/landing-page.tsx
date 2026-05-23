@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { APP_DEMO_EMAIL, APP_NAME } from "@/lib/brand";
 import { LandingHeader } from "./landing-header";
 import { PricingSection } from "./pricing-section";
 
@@ -94,7 +95,7 @@ export function LandingPage() {
               <span className="text-[hsl(var(--viz-cyan))]">render</span> in one canvas
             </h1>
             <p className="mt-6 text-lg text-muted-foreground sm:text-xl">
-              Vizmake is a visual editor for AI image and video pipelines—manage plans, models, and
+              {APP_NAME} is a visual editor for AI image and video pipelines—manage plans, models, and
               prompts from your dashboard, then ship renders in minutes.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -111,7 +112,7 @@ export function LandingPage() {
               </Link>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              Demo: demo@vizmake.local / demo1234
+              Demo: {APP_DEMO_EMAIL} / demo1234
             </p>
           </div>
 
@@ -121,7 +122,7 @@ export function LandingPage() {
               <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
               <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
               <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
-              <span className="ml-2 text-xs text-muted-foreground">Vizmake — workflow editor</span>
+              <span className="ml-2 text-xs text-muted-foreground">{APP_NAME} — workflow editor</span>
             </div>
             <div className="grid aspect-[16/9] grid-cols-[48px_1fr_200px] gap-0 bg-[hsl(220,22%,5%)]">
               <div className="border-r border-border/40 bg-[hsl(220,18%,8%)]" />
@@ -249,7 +250,7 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border/40 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Vizmake</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} {APP_NAME}</p>
           <nav className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
             <Link href="/login" className="hover:text-foreground">
               Log in

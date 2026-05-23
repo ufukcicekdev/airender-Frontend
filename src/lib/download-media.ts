@@ -1,3 +1,4 @@
+import { APP_EXPORT_PREFIX } from "@/lib/brand";
 import { normalizeMediaUrl } from "@/lib/media-url";
 
 export type MediaKind = "image" | "video";
@@ -41,7 +42,7 @@ export function defaultDownloadFilename(
     .trim()
     .replace(/[^\w\s-]/g, "")
     .replace(/\s+/g, "-")
-    .slice(0, 48) || "vizmake-export";
+    .slice(0, 48) || APP_EXPORT_PREFIX;
   const ext = extensionFor(kind, mime, url);
   return `${safe}.${ext}`;
 }
@@ -83,7 +84,7 @@ export async function downloadMedia(
     options?.kind ??
     (url.includes(".mp4") || url.includes(".webm") ? "video" : "image");
   const filename =
-    options?.filename ?? defaultDownloadFilename("vizmake-export", kind, undefined, url);
+    options?.filename ?? defaultDownloadFilename(APP_EXPORT_PREFIX, kind, undefined, url);
 
   if (url.startsWith("data:")) {
     triggerAnchorDownload(url, filename);
@@ -98,7 +99,7 @@ export async function downloadMedia(
     const blob = await response.blob();
     const name =
       options?.filename ??
-      defaultDownloadFilename("vizmake-export", kind, blob.type, url);
+      defaultDownloadFilename(APP_EXPORT_PREFIX, kind, blob.type, url);
     triggerBlobDownload(blob, name);
   } catch {
     triggerAnchorDownload(fetchUrl, filename);

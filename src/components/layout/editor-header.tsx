@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Cloud, CloudOff, Loader2 } from "lucide-react";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/store/ui-store";
 import { useEditorStore } from "@/store/editor-store";
@@ -39,7 +40,7 @@ export function EditorHeader() {
   return (
     <header className="flex h-9 shrink-0 items-center border-b border-border/60 bg-[hsl(220,18%,8%)] px-4">
       <div className="flex items-center gap-3 text-sm">
-        <span className="font-semibold tracking-tight text-foreground">Vizmake</span>
+        <span className="font-semibold tracking-tight text-foreground">{APP_NAME}</span>
         <span className="text-muted-foreground">|</span>
         <span className="flex items-center gap-1.5 text-muted-foreground">
           {serverConnected ? (

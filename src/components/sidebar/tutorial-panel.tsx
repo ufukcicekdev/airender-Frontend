@@ -9,6 +9,7 @@ import {
   Wand2,
 } from "lucide-react";
 import { SidebarPanelShell } from "@/components/sidebar/sidebar-panel-shell";
+import { APP_NAME } from "@/lib/brand";
 
 const STEPS = [
   {
@@ -52,7 +53,7 @@ export function TutorialPanel({ onClose, className }: TutorialPanelProps) {
   return (
     <SidebarPanelShell
       title="Quick start"
-      subtitle="How to run your first generation in Vizmake"
+      subtitle={`How to run your first generation in ${APP_NAME}`}
       onClose={onClose}
       className={className}
     >

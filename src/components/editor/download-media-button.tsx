@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { APP_EXPORT_PREFIX } from "@/lib/brand";
 import {
   defaultDownloadFilename,
   downloadMedia,
@@ -40,7 +41,7 @@ export function DownloadMediaButton({
     setLoading(true);
     try {
       const name =
-        filename ?? defaultDownloadFilename("vizmake-export", kind, undefined, url);
+        filename ?? defaultDownloadFilename(APP_EXPORT_PREFIX, kind, undefined, url);
       await downloadMedia(url, { filename: name, kind });
       toast({ title: "Download started", description: name });
     } catch {

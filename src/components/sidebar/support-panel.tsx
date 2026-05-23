@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ExternalLink, Mail, MessageCircle } from "lucide-react";
 import { SidebarPanelShell } from "@/components/sidebar/sidebar-panel-shell";
+import { APP_NAME, APP_SUPPORT_EMAIL } from "@/lib/brand";
 
 const FAQ = [
   {
@@ -15,7 +16,7 @@ const FAQ = [
   },
   {
     q: "Can I use my own API keys?",
-    a: "Vizmake runs generations through our Fal.ai integration. Custom API keys are not required for standard use.",
+    a: `${APP_NAME} runs generations through our Fal.ai integration. Custom API keys are not required for standard use.`,
   },
   {
     q: "How do I get more credits?",
@@ -58,13 +59,13 @@ export function SupportPanel({ onClose, className }: SupportPanelProps) {
           Contact
         </h3>
         <a
-          href="mailto:support@vizmake.app"
+          href={`mailto:${APP_SUPPORT_EMAIL}`}
           className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/30 p-4 transition-colors hover:border-[hsl(var(--viz-cyan)/0.4)]"
         >
           <Mail className="h-5 w-5 text-[hsl(var(--viz-cyan))]" />
           <div>
             <p className="font-medium">Email support</p>
-            <p className="text-sm text-muted-foreground">support@vizmake.app</p>
+            <p className="text-sm text-muted-foreground">{APP_SUPPORT_EMAIL}</p>
           </div>
         </a>
         <Link

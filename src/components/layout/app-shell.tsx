@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatCredits } from "@/lib/utils";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
 
@@ -59,9 +60,9 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/" className="flex shrink-0 items-center gap-2">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[hsl(var(--viz-cyan))] text-sm font-bold text-[hsl(220,25%,6%)]">
-              V
+              F
             </span>
-            <span className="hidden font-semibold tracking-tight sm:inline">Vizmake</span>
+            <span className="hidden font-semibold tracking-tight sm:inline">{APP_NAME}</span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
@@ -175,7 +176,7 @@ export function AppShell({ children, title, subtitle, actions }: AppShellProps) 
 
       <footer className="border-t border-border/40 py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 text-xs text-muted-foreground sm:px-6">
-          <span>© Vizmake</span>
+          <span>© {APP_NAME}</span>
           <div className="flex flex-wrap gap-4">
             <Link href="/" className="hover:text-foreground">
               Home
