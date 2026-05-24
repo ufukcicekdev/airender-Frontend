@@ -8,6 +8,7 @@ import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
 import { useAuthStore } from "@/store/auth-store";
 import { isCanvasGraph } from "@/lib/canvas-graph-io";
+import { isMeshMediaUrl } from "@/lib/media-kind";
 import type { RenderUpdatePayload } from "@/services/websocket.service";
 import type { WorkflowGraph } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -26,17 +27,44 @@ function applyMediaToRenderNode(
   payload: RenderUpdatePayload
 ) {
   const isVideo = outputType === "video";
+  const isModel3d = outputType === "model3d";
   if (isVideo) {
     useEditorStore.getState().updateNodeData(
       renderNodeId,
       {
         videoUrl: url,
         imageUrl: undefined,
+        modelUrl: undefined,
         url,
         outputType: "video",
         status: payload.status === "completed" ? "completed" : "processing",
         progress: payload.progress,
       },
+      { silent: true }
+    );
+  } else if (isModel3d) {
+    const mesh = isMeshMediaUrl(url);
+    useEditorStore.getState().updateNodeData(
+      renderNodeId,
+      mesh
+        ? {
+            modelUrl: url,
+            imageUrl: undefined,
+            videoUrl: undefined,
+            url,
+            outputType: "model3d",
+            status: payload.status === "completed" ? "completed" : "processing",
+            progress: payload.progress,
+          }
+        : {
+            imageUrl: url,
+            modelUrl: undefined,
+            videoUrl: undefined,
+            url,
+            outputType: "model3d",
+            status: payload.status === "completed" ? "completed" : "processing",
+            progress: payload.progress,
+          },
       { silent: true }
     );
   } else {
@@ -45,6 +73,7 @@ function applyMediaToRenderNode(
       {
         imageUrl: url,
         videoUrl: undefined,
+        modelUrl: undefined,
         url,
         outputType: "image",
         status: payload.status === "completed" ? "completed" : "processing",
@@ -126,13 +155,19 @@ function applyRenderPayload(
       );
       const data = renderNode?.data as Record<string, unknown> | undefined;
       const videoUrl = data?.videoUrl as string | undefined;
+      const modelUrl = data?.modelUrl as string | undefined;
       const imageUrl = data?.imageUrl as string | undefined;
       const url =
+        modelUrl ||
         videoUrl ||
         imageUrl ||
         (data?.url as string) ||
         `/api/render/${taskId}/preview`;
-      const resolvedType = videoUrl ? "video" : payload.output_type || "image";
+      const resolvedType = modelUrl
+        ? "model3d"
+        : videoUrl
+          ? "video"
+          : payload.output_type || "image";
       applyMediaToRenderNode(renderNodeId, url, resolvedType, payload);
       setPreviewUrl(url);
     }

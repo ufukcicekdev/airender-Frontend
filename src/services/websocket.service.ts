@@ -27,7 +27,7 @@ export type RenderUpdatePayload = {
   error_message?: string;
   flow_data?: FlowData;
   output_url?: string;
-  output_type?: "image" | "video";
+  output_type?: "image" | "video" | "model3d";
 };
 
 export type RenderWsCallbacks = {

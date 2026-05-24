@@ -1,7 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Box, Loader2 } from "lucide-react";
+import { Model3dViewer } from "@/components/editor/model-3d-viewer";
 import { cn } from "@/lib/utils";
+import { isModel3dPreviewable } from "@/lib/media-kind";
 import { normalizeMediaUrl } from "@/lib/media-url";
 import { inputPortTopPercent, type InputPortInfo } from "@/lib/dynamic-input-handles";
 import {
@@ -58,7 +60,9 @@ export function VizNodeCard({
     typeof data.progress === "number" ? Math.round(data.progress) : null;
   const isCompleted = status === "completed";
   const hasRenderedOutput =
-    isCompleted && Boolean(data.imageUrl || data.videoUrl) && !isDraft;
+    isCompleted &&
+    Boolean(data.imageUrl || data.videoUrl || data.modelUrl) &&
+    !isDraft;
   const videoUrl =
     normalizeMediaUrl(data.videoUrl as string | undefined) ||
     (String(data.outputType || "").toLowerCase() === "video" ||
@@ -70,6 +74,17 @@ export function VizNodeCard({
   const imageUrl =
     normalizeMediaUrl((data.imageUrl as string) || previewUrl) || PLACEHOLDER_SKETCH;
   const showVideo = Boolean(videoUrl);
+  const modelUrl = normalizeMediaUrl(data.modelUrl as string | undefined);
+  const meshPreviewUrl =
+    modelUrl && isModel3dPreviewable(modelUrl) ? modelUrl : undefined;
+  const thumbnailUrl = normalizeMediaUrl(
+    (data.thumbnailUrl as string) || undefined
+  );
+  const isModel3dOutput =
+    isCompleted &&
+    (Boolean(meshPreviewUrl) ||
+      data.categorySlug === "3d-model" ||
+      String(data.outputType || "").toLowerCase() === "model3d");
 
   const ports = dynamicInputs ? inputPorts : [];
   const connectedThumbs = ports
@@ -131,6 +146,27 @@ export function VizNodeCard({
             loop
             autoPlay
           />
+        ) : meshPreviewUrl && isModel3dOutput ? (
+          <Model3dViewer
+            url={meshPreviewUrl}
+            variant="node"
+            className="h-full w-full"
+          />
+        ) : isModel3dOutput && (thumbnailUrl || data.imageUrl) ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={thumbnailUrl || String(data.imageUrl)}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="h-full w-full object-cover"
+          />
+        ) : isModel3dOutput && !isDraft ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-[hsl(220,22%,10%)] text-[hsl(var(--viz-cyan)/0.9)]">
+            <Box className="h-8 w-8" />
+            <span className="text-[9px] font-semibold uppercase tracking-wide">
+              3D
+            </span>
+          </div>
         ) : (
           <img
             src={imageUrl}
@@ -171,7 +207,9 @@ export function VizNodeCard({
             <span className="rounded-md bg-black/50 px-2 py-0.5 text-[10px] font-medium text-[hsl(var(--viz-cyan))]">
               {data.categorySlug === "image-to-video"
                 ? "Generating video"
-                : "Generating"}
+                : data.categorySlug === "3d-model"
+                  ? "Generating 3D"
+                  : "Generating"}
               {progressPct != null ? ` · ${progressPct}%` : ""}
             </span>
           </div>

@@ -7,7 +7,7 @@ export function taskToRenderPayload(task: RenderTask): RenderUpdatePayload {
   const meta = (gen?.metadata || {}) as Record<string, unknown>;
   const imageUrl = gen?.image_url || undefined;
   let outputType =
-    (meta.output_type as "image" | "video" | undefined) || "image";
+    (meta.output_type as "image" | "video" | "model3d" | undefined) || "image";
 
   const rid = (task.node_statuses || {})._target_render_id as string | undefined;
   const flow = task.flow_data;
@@ -18,10 +18,16 @@ export function taskToRenderPayload(task: RenderTask): RenderUpdatePayload {
 
   if (nodeData?.categorySlug === "image-to-video") {
     outputType = "video";
+  } else if (nodeData?.categorySlug === "3d-model") {
+    outputType = "model3d";
   } else if (String(nodeData?.outputType || "").toLowerCase() === "video") {
     outputType = "video";
+  } else if (String(nodeData?.outputType || "").toLowerCase() === "model3d") {
+    outputType = "model3d";
   } else if (imageUrl && /\.(mp4|webm|mov)(\?|$)/i.test(imageUrl)) {
     outputType = "video";
+  } else if (imageUrl && /\.(glb|gltf|obj|fbx)(\?|$)/i.test(imageUrl)) {
+    outputType = "model3d";
   }
 
   return {

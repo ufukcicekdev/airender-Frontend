@@ -52,7 +52,13 @@ export function MediaWorkspaceOverlay() {
       };
     }
     if (!isDownloadableMediaUrl(displayImage)) return null;
-    const kind = displayImage.includes(".mp4") ? "video" as const : "image" as const;
+    const kind =
+      previewMedia.kind ??
+      (displayImage.includes(".mp4") || displayImage.includes(".webm")
+        ? ("video" as const)
+        : /\.(glb|gltf|obj|fbx)(\?|$)/i.test(displayImage)
+          ? ("model3d" as const)
+          : ("image" as const));
     return {
       url: displayImage,
       kind,

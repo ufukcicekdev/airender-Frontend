@@ -10,6 +10,11 @@ import type {
   VideoResolution,
 } from "@/lib/video-creator-settings";
 import type { UpscaleMaxOutput, UpscaleScale } from "@/lib/upscale-settings";
+import type {
+  Model3dPolycount,
+  Model3dSymmetry,
+  Model3dTopology,
+} from "@/lib/model-3d-settings";
 import type { ModelInputImage } from "@/types";
 
 export type SidebarSection =
@@ -55,6 +60,11 @@ interface UIState {
   videoGenerateAudio: boolean;
   upscaleScale: UpscaleScale;
   upscaleMaxOutput: UpscaleMaxOutput;
+  model3dTopology: Model3dTopology;
+  model3dPolycount: Model3dPolycount;
+  model3dSymmetry: Model3dSymmetry;
+  model3dShouldRemesh: boolean;
+  model3dShouldTexture: boolean;
   showCanvasDots: boolean;
   compareSlotA: CompareSlot | null;
   compareSlotB: CompareSlot | null;
@@ -93,6 +103,11 @@ interface UIState {
   setVideoGenerateAudio: (enabled: boolean) => void;
   setUpscaleScale: (scale: UpscaleScale) => void;
   setUpscaleMaxOutput: (maxOutput: UpscaleMaxOutput) => void;
+  setModel3dTopology: (topology: Model3dTopology) => void;
+  setModel3dPolycount: (polycount: Model3dPolycount) => void;
+  setModel3dSymmetry: (symmetry: Model3dSymmetry) => void;
+  setModel3dShouldRemesh: (enabled: boolean) => void;
+  setModel3dShouldTexture: (enabled: boolean) => void;
   setShowCanvasDots: (show: boolean) => void;
   toggleCanvasDots: () => void;
   setCompareSlotA: (slot: CompareSlot | null) => void;
@@ -130,6 +145,11 @@ export const useUIStore = create<UIState>((set) => ({
   videoGenerateAudio: false,
   upscaleScale: "4",
   upscaleMaxOutput: "auto",
+  model3dTopology: "triangle",
+  model3dPolycount: "medium",
+  model3dSymmetry: "auto",
+  model3dShouldRemesh: true,
+  model3dShouldTexture: true,
   showCanvasDots: true,
   compareSlotA: null,
   compareSlotB: null,
@@ -172,6 +192,11 @@ export const useUIStore = create<UIState>((set) => ({
   setVideoGenerateAudio: (videoGenerateAudio) => set({ videoGenerateAudio }),
   setUpscaleScale: (upscaleScale) => set({ upscaleScale }),
   setUpscaleMaxOutput: (upscaleMaxOutput) => set({ upscaleMaxOutput }),
+  setModel3dTopology: (model3dTopology) => set({ model3dTopology }),
+  setModel3dPolycount: (model3dPolycount) => set({ model3dPolycount }),
+  setModel3dSymmetry: (model3dSymmetry) => set({ model3dSymmetry }),
+  setModel3dShouldRemesh: (model3dShouldRemesh) => set({ model3dShouldRemesh }),
+  setModel3dShouldTexture: (model3dShouldTexture) => set({ model3dShouldTexture }),
   setShowCanvasDots: (showCanvasDots) => set({ showCanvasDots }),
   toggleCanvasDots: () => set((s) => ({ showCanvasDots: !s.showCanvasDots })),
   setCompareSlotA: (compareSlotA) => set({ compareSlotA }),

@@ -220,6 +220,95 @@ export function resolveMakeAction(
   return { mode: "invalid", reason: "select_source" };
 }
 
+/** Place text-only render nodes (no Source on canvas). */
+export function defaultTextOnlyGenerationPosition(
+  nodes: EditorNode[],
+  slotIndex = 0
+): { x: number; y: number } {
+  const baseX = 320;
+  const baseY = 180;
+  if (!nodes.length) {
+    return { x: baseX, y: baseY + slotIndex * GENERATION_Y_STEP };
+  }
+  const maxX = Math.max(...nodes.map((n) => n.position.x));
+  const avgY =
+    nodes.reduce((sum, n) => sum + n.position.y, 0) / nodes.length;
+  return {
+    x: maxX + GENERATION_X_OFFSET,
+    y: avgY + slotIndex * GENERATION_Y_STEP,
+  };
+}
+
+export function countTextOnlyGenerations(
+  nodes: EditorNode[],
+  edges: Edge[]
+): number {
+  return nodes.filter((n) => {
+    if (!isCommittedRender(n)) return false;
+    const hasInput = edges.some((e) => {
+      if (e.target !== n.id) return false;
+      const src = nodes.find((node) => node.id === e.source);
+      return src?.type === "source" || isCommittedRender(src);
+    });
+    return !hasInput;
+  }).length;
+}
+
+export function buildTextOnlyRenderNode(options: {
+  nodes: EditorNode[];
+  edges: Edge[];
+  positive: string;
+  negative: string;
+  modelSlug: string | null;
+  categorySlug: string | null;
+  modelName?: string;
+  inputImages?: ModelInputImage[];
+  extraData?: Record<string, unknown>;
+}): EditorNode {
+  const {
+    nodes,
+    edges,
+    positive,
+    negative,
+    modelSlug,
+    categorySlug,
+    modelName,
+    inputImages = [],
+    extraData = {},
+  } = options;
+
+  const slot = countTextOnlyGenerations(nodes, edges);
+  const position = defaultTextOnlyGenerationPosition(nodes, slot);
+  const genNum = slot + 1;
+
+  const data: NodeData = {
+    label: modelName ? `${modelName}` : `Generate ${genNum}`,
+    badge: String(genNum),
+    status: "queued",
+    isDraft: false,
+    positive,
+    negative,
+    modelSlug: modelSlug ?? undefined,
+    categorySlug: categorySlug ?? undefined,
+    inputImages,
+    generationIndex: genNum,
+    sourceIds: [],
+    ...(categorySlug === "image-to-video"
+      ? { outputType: "video" }
+      : categorySlug === "3d-model"
+        ? { outputType: "model3d" }
+        : {}),
+    ...extraData,
+  };
+
+  return {
+    id: `render-${Date.now()}-${genNum}`,
+    type: "render",
+    position,
+    data,
+  };
+}
+
 export function sourceNodesFromIds(
   nodes: EditorNode[],
   sourceIds: string[]
@@ -280,6 +369,11 @@ export function buildGenerationRenderNode(options: {
     negative,
     modelSlug: modelSlug ?? undefined,
     categorySlug: categorySlug ?? undefined,
+    ...(categorySlug === "image-to-video"
+      ? { outputType: "video" }
+      : categorySlug === "3d-model"
+        ? { outputType: "model3d" }
+        : {}),
     inputImages,
     generationIndex: genNum,
     sourceIds: sourceIdsForData,

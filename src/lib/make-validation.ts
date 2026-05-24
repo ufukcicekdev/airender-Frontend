@@ -12,6 +12,7 @@ import {
 } from "@/lib/generation-nodes";
 import { effectiveMakePrompt } from "@/lib/effective-prompt";
 import { getModelInputRules } from "@/lib/model-input-rules";
+import { model3dMissingImageMessage } from "@/lib/model-3d-settings";
 import type { CatalogModel, ModelInputImage } from "@/types";
 
 export type MakeBlockReason =
@@ -132,16 +133,20 @@ export function evaluateMakeReadiness(options: {
   });
 
   if (action.mode === "invalid") {
+    const photoOnly3d =
+      categorySlug === "3d-model" && selectedModel.requires_images;
     return {
       ...empty,
       canMake: false,
       reason: action.reason === "no_source" ? "no_source" : "select_source",
-      title:
-        action.reason === "no_source"
+      title: photoOnly3d
+        ? model3dMissingImageMessage(selectedModel).title
+        : action.reason === "no_source"
           ? "Add a source image"
           : "Select a source",
-      description:
-        action.reason === "no_source"
+      description: photoOnly3d
+        ? model3dMissingImageMessage(selectedModel).description
+        : action.reason === "no_source"
           ? "Upload a Source image on the canvas (left toolbar), then press Make."
           : "Multiple sources on canvas — click the source you want to use.",
     };
@@ -165,12 +170,17 @@ export function evaluateMakeReadiness(options: {
     : rules.min;
 
   if (!rules.isValid(inputImages.length)) {
+    const missing3d =
+      categorySlug === "3d-model" && selectedModel.requires_images
+        ? model3dMissingImageMessage(selectedModel)
+        : null;
     return {
       canMake: false,
       reason: "missing_inputs",
-      title: "Source image required",
+      title: missing3d?.title ?? "Source image required",
       description:
-        rules.help ||
+        missing3d?.description ??
+        rules.help ??
         (requiredMin === 1
           ? "This model needs at least one Source image on the canvas."
           : `This model needs at least ${requiredMin} images.`),

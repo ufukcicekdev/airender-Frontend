@@ -1,7 +1,7 @@
 import { APP_EXPORT_PREFIX } from "@/lib/brand";
 import { normalizeMediaUrl } from "@/lib/media-url";
 
-export type MediaKind = "image" | "video";
+export type MediaKind = "image" | "video" | "model3d";
 
 const PLACEHOLDER_PREFIX = "data:image/svg+xml";
 
@@ -21,6 +21,14 @@ function resolveFetchUrl(url: string): string {
 
 function extensionFor(kind: MediaKind, mime?: string, url?: string): string {
   if (kind === "video") return "mp4";
+  if (kind === "model3d") {
+    const path = url?.split("?")[0] ?? "";
+    const match = path.match(/\.([a-z0-9]+)$/i);
+    if (match && ["glb", "gltf", "obj", "fbx"].includes(match[1].toLowerCase())) {
+      return match[1].toLowerCase();
+    }
+    return "glb";
+  }
   if (mime?.includes("png")) return "png";
   if (mime?.includes("webp")) return "webp";
   if (mime?.includes("jpeg") || mime?.includes("jpg")) return "jpg";
@@ -82,7 +90,11 @@ export async function downloadMedia(
 
   const kind =
     options?.kind ??
-    (url.includes(".mp4") || url.includes(".webm") ? "video" : "image");
+    (url.includes(".mp4") || url.includes(".webm")
+      ? "video"
+      : /\.(glb|gltf|obj|fbx)(\?|$)/i.test(url)
+        ? "model3d"
+        : "image");
   const filename =
     options?.filename ?? defaultDownloadFilename(APP_EXPORT_PREFIX, kind, undefined, url);
 

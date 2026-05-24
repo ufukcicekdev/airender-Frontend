@@ -68,7 +68,9 @@ export function getModelInputRules(
     label: model.input_images_label || "Input images",
     help:
       model.input_images_help ||
-      (requiresImages && effectiveMin === 1
+      (!requiresImages && (max > 0 || categorySlug === "3d-model" || categorySlug === "image-generate")
+        ? "Optional — connect a Source for image-guided output, or use the prompt bar for text-only."
+        : requiresImages && effectiveMin === 1
         ? "Upload a Source image on the canvas, then press Make."
         : unlimited
           ? "Add as many reference images as you need."

@@ -7,6 +7,7 @@ import { useUIStore } from "@/store/ui-store";
 import { catalogService } from "@/services/catalog.service";
 import { imageEditSettingsPayload } from "@/lib/image-edit-settings";
 import { upscaleSettingsPayload } from "@/lib/upscale-settings";
+import { model3dSettingsPayload } from "@/lib/model-3d-settings";
 import { videoCreatorSettingsPayload } from "@/lib/video-creator-settings";
 import { isPanelPersistSuppressed } from "@/lib/panel-sync-guard";
 
@@ -32,6 +33,11 @@ export function usePersistPanelToNode() {
     videoGenerateAudio,
     upscaleScale,
     upscaleMaxOutput,
+    model3dTopology,
+    model3dPolycount,
+    model3dSymmetry,
+    model3dShouldRemesh,
+    model3dShouldTexture,
   } = useUIStore();
 
   const { data: categories = [] } = useQuery({
@@ -88,7 +94,15 @@ export function usePersistPanelToNode() {
             )
           : selectedCategorySlug === "upscale"
             ? upscaleSettingsPayload(upscaleScale, upscaleMaxOutput)
-            : {};
+            : selectedCategorySlug === "3d-model"
+              ? model3dSettingsPayload(
+                  model3dTopology,
+                  model3dPolycount,
+                  model3dSymmetry,
+                  model3dShouldRemesh,
+                  model3dShouldTexture
+                )
+              : {};
 
     const key = JSON.stringify({
       id: selectedNodeId,
@@ -144,6 +158,11 @@ export function usePersistPanelToNode() {
     videoGenerateAudio,
     upscaleScale,
     upscaleMaxOutput,
+    model3dTopology,
+    model3dPolycount,
+    model3dSymmetry,
+    model3dShouldRemesh,
+    model3dShouldTexture,
     updateNodeData,
   ]);
 }

@@ -15,6 +15,7 @@ import {
 } from "@/lib/generation-nodes";
 import { imageEditSettingsPayload } from "@/lib/image-edit-settings";
 import { upscaleSettingsPayload } from "@/lib/upscale-settings";
+import { model3dSettingsPayload } from "@/lib/model-3d-settings";
 import { videoCreatorSettingsPayload } from "@/lib/video-creator-settings";
 import type { ModelInputImage } from "@/types";
 
@@ -121,6 +122,11 @@ export function useSyncDraftGenerationNode() {
     videoGenerateAudio,
     upscaleScale,
     upscaleMaxOutput,
+    model3dTopology,
+    model3dPolycount,
+    model3dSymmetry,
+    model3dShouldRemesh,
+    model3dShouldTexture,
   } = useUIStore();
 
   const { data: categories = [] } = useQuery({
@@ -188,7 +194,15 @@ export function useSyncDraftGenerationNode() {
             )
           : categorySlug === "upscale"
             ? upscaleSettingsPayload(upscaleScale, upscaleMaxOutput)
-            : { aspect_ratio: "16:9" };
+            : categorySlug === "3d-model"
+              ? model3dSettingsPayload(
+                  model3dTopology,
+                  model3dPolycount,
+                  model3dSymmetry,
+                  model3dShouldRemesh,
+                  model3dShouldTexture
+                )
+              : { aspect_ratio: "16:9" };
 
     const syncKey = draftSyncFingerprint(
       source,

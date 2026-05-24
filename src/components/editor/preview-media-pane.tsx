@@ -3,6 +3,7 @@
 import { GripHorizontal } from "lucide-react";
 import { DownloadMediaButton } from "@/components/editor/download-media-button";
 import { ImageCompareSlider } from "@/components/editor/image-compare-slider";
+import { Model3dViewer } from "@/components/editor/model-3d-viewer";
 import type { MediaKind } from "@/lib/download-media";
 import { isDownloadableMediaUrl } from "@/lib/download-media";
 import { looksLikeVideoUrl, toPlayableMediaUrl } from "@/lib/media-kind";
@@ -71,6 +72,15 @@ export function PreviewMediaPane({
     !isRendering &&
     singleMediaKind === "video" &&
     looksLikeVideoUrl(playableUrl);
+  const showModel3d =
+    !isRendering && singleMediaKind === "model3d" && Boolean(playableUrl);
+
+  const generatingLabel =
+    singleMediaKind === "video"
+      ? "Generating video…"
+      : singleMediaKind === "model3d"
+        ? "Generating 3D model…"
+        : "Generating…";
 
   return (
     <div
@@ -118,13 +128,16 @@ export function PreviewMediaPane({
             )}
           >
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-[hsl(var(--viz-cyan)/0.25)] border-t-[hsl(var(--viz-cyan))]" />
-            <p className="text-sm font-medium text-foreground">
-              {singleMediaKind === "video" ? "Generating video…" : "Generating…"}
-            </p>
+            <p className="text-sm font-medium text-foreground">{generatingLabel}</p>
             {renderStage ? (
               <p className="text-xs text-muted-foreground">{renderStage}</p>
             ) : null}
           </div>
+        ) : showModel3d ? (
+          <Model3dViewer
+            url={playableUrl}
+            className={isWorkspace ? "min-h-[200px]" : "h-full"}
+          />
         ) : showVideo ? (
           <video
             key={playableUrl}

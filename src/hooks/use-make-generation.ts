@@ -15,6 +15,7 @@ import { isRenderNodeType } from "@/lib/generation-nodes";
 import {
   buildGenerationEdges,
   buildGenerationRenderNode,
+  buildTextOnlyRenderNode,
   countCommittedChildrenFromRender,
   countCommittedGenerationsFromSource,
   findDraftRenderForSource,
@@ -24,6 +25,7 @@ import {
 import { getNodeMaskDataUrl } from "@/lib/node-draw-mask";
 import { imageEditSettingsPayload } from "@/lib/image-edit-settings";
 import { upscaleSettingsPayload } from "@/lib/upscale-settings";
+import { model3dMissingImageMessage, model3dSettingsPayload } from "@/lib/model-3d-settings";
 import { videoCreatorSettingsPayload } from "@/lib/video-creator-settings";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth-store";
@@ -48,6 +50,11 @@ export function useMakeGeneration() {
     videoGenerateAudio,
     upscaleScale,
     upscaleMaxOutput,
+    model3dTopology,
+    model3dPolycount,
+    model3dSymmetry,
+    model3dShouldRemesh,
+    model3dShouldTexture,
   } = useUIStore();
   const { data: categories = [] } = useQuery({
     queryKey: ["catalog"],
@@ -188,7 +195,15 @@ export function useMakeGeneration() {
             )
           : selectedCategorySlug === "upscale"
             ? upscaleSettingsPayload(upscaleScale, upscaleMaxOutput)
-            : {};
+            : selectedCategorySlug === "3d-model"
+              ? model3dSettingsPayload(
+                  model3dTopology,
+                  model3dPolycount,
+                  model3dSymmetry,
+                  model3dShouldRemesh,
+                  model3dShouldTexture
+                )
+              : {};
 
     const payload = {
       positive: prompt,
@@ -261,10 +276,35 @@ export function useMakeGeneration() {
     }
 
     const anchor = sourceNodes[0];
-    if (!anchor) {
+    const anchorHasImage = Boolean(anchor?.data?.imageUrl);
+
+    if (!anchorHasImage) {
+      if (!rules.requiresImages) {
+        const node = buildTextOnlyRenderNode({
+          nodes,
+          edges,
+          positive: prompt,
+          negative: bottomNegativePrompt,
+          modelSlug: selectedModelSlug,
+          categorySlug: selectedCategorySlug,
+          modelName: selectedModel?.name,
+          inputImages,
+          extraData: payload,
+        });
+        const id = spawnGeneration(node, []);
+        useEditorStore.getState().bumpDraftSync();
+        return id;
+      }
+      const msg =
+        selectedCategorySlug === "3d-model"
+          ? model3dMissingImageMessage(selectedModel)
+          : {
+              title: "Add a source image",
+              description: "Upload a Source node on the canvas, then Make.",
+            };
       toast({
-        title: "Add a source image",
-        description: "Upload a Source node on the canvas, then Make.",
+        title: msg.title,
+        description: msg.description,
         variant: "destructive",
       });
       return null;
@@ -303,6 +343,11 @@ export function useMakeGeneration() {
     videoGenerateAudio,
     upscaleScale,
     upscaleMaxOutput,
+    model3dTopology,
+    model3dPolycount,
+    model3dSymmetry,
+    model3dShouldRemesh,
+    model3dShouldTexture,
     selectedNodeId,
     nodes,
     edges,

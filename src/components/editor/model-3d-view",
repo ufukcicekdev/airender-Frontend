@@ -1,0 +1,125 @@
+"use client";
+
+import { Box, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  isModel3dPreviewable,
+  looksLikeImageUrl,
+} from "@/lib/media-kind";
+import { cn } from "@/lib/utils";
+
+type Model3dViewerProps = {
+  url: string;
+  className?: string;
+};
+
+export function Model3dViewer({ url, className }: Model3dViewerProps) {
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const previewable = isModel3dPreviewable(url);
+  const imageFallback = !previewable && looksLikeImageUrl(url);
+
+  useEffect(() => {
+    if (!previewable) return;
+    let cancelled = false;
+    void import("@google/model-viewer").then(() => {
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [previewable, url]);
+
+  if (imageFallback) {
+    return (
+      <div className={cn("relative h-full w-full bg-[#0d0f12]", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt="3D preview thumbnail"
+          className="h-full w-full object-contain"
+        />
+        <p className="absolute bottom-2 left-0 right-0 text-center text-[10px] text-muted-foreground">
+          Preview image — GLB mesh will appear here when the provider returns one
+        </p>
+      </motionPlaceholderShell>
+    );
+  }
+
+  if (!previewable || failed) {
+    return (
+      <ViewerPlaceholder
+        className={className}
+        icon={<Box className="h-10 w-10 text-[hsl(var(--viz-cyan)/0.85)]" />}
+        message={
+          failed
+            ? "Could not load 3D preview — use Download to save the file"
+            : "3D mesh ready — download GLB/GLTF to open in an external viewer"
+        }
+      />
+    );
+  }
+
+  if (!ready) {
+    return (
+      <ViewerPlaceholder
+        className={className}
+        icon={
+          <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--viz-cyan))]" />
+        }
+        message="Loading 3D model…"
+      />
+    );
+  }
+
+  return (
+    <model-viewer
+      key={url}
+      src={url}
+      camera-controls
+      auto-rotate
+      touch-action="pan-y"
+      shadow-intensity="1"
+      exposure="1"
+      className={cn("block h-full w-full bg-[#0d0f12]", className)}
+      style={{ minHeight: "200px" }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+function ViewerPlaceholder({
+  className,
+  icon,
+  message,
+}: {
+  className?: string;
+  icon: React.ReactNode;
+  message: string;
+}) {
+  return (
+    <PlaceholderFrame className={className}>
+      {icon}
+      <p className="max-w-xs text-sm text-muted-foreground">{message}</p>
+    </PlaceholderFrame>
+  );
+}
+
+function PlaceholderFrame({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex h-full min-h-[200px] flex-col items-center justify-center gap-3 bg-[hsl(220,20%,6%)] p-6 text-center",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}

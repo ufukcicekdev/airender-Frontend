@@ -12,6 +12,7 @@ import { UpscaleControls } from "@/components/catalog/upscale-controls";
 import { PromptPresetsPanel } from "@/components/catalog/prompt-presets-panel";
 import { VideoCreatorControls } from "@/components/catalog/video-creator-controls";
 import { CatalogModelsEmpty } from "@/components/catalog/catalog-models-empty";
+import { Model3dControls } from "@/components/catalog/model-3d-controls";
 import { ModelEnginePanel } from "@/components/catalog/model-engine-panel";
 import { ModelPicker } from "@/components/catalog/model-picker";
 import { ModelTagBadge } from "@/components/catalog/model-tag-badge";
@@ -180,7 +181,13 @@ export function RightPanel() {
     }
     const url = isDownloadableMediaUrl(displayImage) ? displayImage : null;
     if (!isDownloadableMediaUrl(url)) return null;
-    const kind = url.includes(".mp4") || url.includes(".webm") ? "video" as const : "image" as const;
+    const kind =
+      previewMedia.kind ??
+      (url.includes(".mp4") || url.includes(".webm")
+        ? ("video" as const)
+        : /\.(glb|gltf|obj|fbx)(\?|$)/i.test(url)
+          ? ("model3d" as const)
+          : ("image" as const));
     return {
       url,
       kind,
@@ -483,13 +490,13 @@ export function RightPanel() {
             selectedSlug={selectedModel?.slug}
             onSelectModel={selectModel}
           />
-        ) : selectedCategory?.slug === "image-generate" ? (
-          <ModelEnginePanel
+        ) : selectedCategory?.slug === "3d-model" ? (
+          <Model3dControls
             models={selectedCategory.models}
             selectedSlug={selectedModel?.slug}
             onSelectModel={selectModel}
           />
-        ) : selectedCategory?.slug === "3d-model" ? (
+        ) : selectedCategory?.slug === "image-generate" ? (
           <ModelEnginePanel
             models={selectedCategory.models}
             selectedSlug={selectedModel?.slug}
