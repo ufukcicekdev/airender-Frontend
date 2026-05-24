@@ -59,7 +59,7 @@ export function LeftSidebar() {
   );
 
   return (
-    <aside className="flex w-[52px] shrink-0 flex-col items-center border-r border-border/60 bg-[hsl(220,20%,7%)] py-3">
+    <aside className="hidden w-[52px] shrink-0 flex-col items-center border-r border-border/60 bg-[hsl(220,20%,7%)] py-3 lg:flex">
       <Link
         href="/dashboard"
         className="mb-5 flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(var(--viz-cyan))] text-xs font-bold text-[hsl(220,25%,6%)]"

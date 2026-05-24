@@ -32,12 +32,18 @@ export function NodeToolbar() {
   );
 
   return (
-    <aside className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-border/60 bg-[hsl(220,20%,7%)] py-3">
+    <aside
+      className={cn(
+        "flex shrink-0 border-border/60 bg-[hsl(220,20%,7%)]",
+        "flex-row items-center gap-0.5 overflow-x-auto border-b px-2 py-1.5",
+        "lg:w-12 lg:flex-col lg:gap-1 lg:overflow-visible lg:border-b-0 lg:border-r lg:py-3"
+      )}
+    >
       <button
         type="button"
         title="Commands (⌘K)"
         onClick={() => setCommandPaletteOpen(true)}
-        className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-[hsl(var(--viz-cyan)/0.15)] text-[hsl(var(--viz-cyan))] hover:bg-[hsl(var(--viz-cyan)/0.25)]"
+        className="mb-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[hsl(var(--viz-cyan)/0.15)] text-[hsl(var(--viz-cyan))] hover:bg-[hsl(var(--viz-cyan)/0.25)] lg:mb-2"
       >
         <Plus className="h-4 w-4" />
       </button>
@@ -46,7 +52,7 @@ export function NodeToolbar() {
         title="Add source image"
         onClick={addSource}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors",
           "hover:bg-white/5 hover:text-[hsl(var(--viz-cyan))]"
         )}
       >
@@ -57,7 +63,7 @@ export function NodeToolbar() {
         title="Add group area — drag nodes inside (⌘G)"
         onClick={() => requestNewGroup()}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors",
           "hover:bg-white/5 hover:text-[hsl(var(--viz-cyan))]"
         )}
       >
@@ -69,7 +75,7 @@ export function NodeToolbar() {
         disabled={!hasGroupSelected}
         onClick={ungroupSelection}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors",
           hasGroupSelected
             ? "hover:bg-white/5 hover:text-[hsl(var(--viz-cyan))]"
             : "cursor-not-allowed opacity-35"
@@ -82,7 +88,7 @@ export function NodeToolbar() {
         title={showCanvasDots ? "Hide dot grid" : "Show dot grid"}
         onClick={toggleCanvasDots}
         className={cn(
-          "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
           showCanvasDots
             ? "bg-[hsl(var(--viz-cyan)/0.12)] text-[hsl(var(--viz-cyan))]"
             : "text-muted-foreground hover:bg-white/5 hover:text-foreground"

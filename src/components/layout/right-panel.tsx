@@ -54,7 +54,14 @@ function applyCategoryDefaults(
   }
 }
 
-export function RightPanel() {
+export function RightPanel({
+  layout = "inline",
+  onClose,
+}: {
+  layout?: "inline" | "overlay";
+  onClose?: () => void;
+} = {}) {
+  const isOverlay = layout === "overlay";
   const { width, isResizing, startResize, resetWidth } = useResizablePanel();
   const {
     previewTab,
@@ -254,13 +261,15 @@ export function RightPanel() {
 
   return (
     <aside
-      style={{ width }}
+      style={isOverlay ? undefined : { width }}
       className={cn(
         "viz-right-panel relative flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l border-border/60 bg-[hsl(220,18%,9%)]",
+        isOverlay && "w-full max-w-none border-l-0",
         isResizing && "select-none"
       )}
     >
-      <div
+      {!isOverlay ? (
+        <div
         role="separator"
         aria-orientation="vertical"
         aria-label="Resize panel"
@@ -283,6 +292,7 @@ export function RightPanel() {
           <GripVertical className="h-3 w-3 text-muted-foreground opacity-0 group-hover/resize:opacity-100" />
         </div>
       </div>
+      ) : null}
       <div className="flex items-center border-b border-border/60 pr-1">
         <div className="flex min-w-0 flex-1">
           {TABS.map((tab) => (
@@ -301,7 +311,18 @@ export function RightPanel() {
             </button>
           ))}
         </div>
-        <PaneExpandButton className="shrink-0" />
+        {isOverlay && onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-white/10 hover:text-foreground"
+            aria-label="Close panel"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : (
+          <PaneExpandButton className="shrink-0" />
+        )}
       </div>
 
       {previewTab === "compare" && (compareSlotA || compareSlotB) && (

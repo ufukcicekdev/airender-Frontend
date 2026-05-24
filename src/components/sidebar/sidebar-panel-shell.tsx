@@ -25,7 +25,7 @@ export function SidebarPanelShell({
         className
       )}
     >
-      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-6 py-4">
+      <div className="flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
         <div>
           <h2 className="text-lg font-semibold">{title}</h2>
           {subtitle && (
@@ -43,7 +43,7 @@ export function SidebarPanelShell({
           </button>
         )}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">{children}</div>
     </div>
   );
 }

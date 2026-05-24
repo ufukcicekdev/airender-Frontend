@@ -9,6 +9,8 @@ import { PromptBar } from "@/components/editor/prompt-bar";
 import { CommandPalette } from "@/components/editor/command-palette";
 import { NodeToolbar } from "@/components/editor/node-toolbar";
 import { EditorHeader } from "@/components/layout/editor-header";
+import { EditorMobileNav } from "@/components/layout/editor-mobile-nav";
+import { EditorMobilePanel } from "@/components/layout/editor-mobile-panel";
 import { LeftSidebar } from "@/components/layout/left-sidebar";
 import { RightPanel } from "@/components/layout/right-panel";
 import { EditorSidebarPanel } from "@/components/sidebar/editor-sidebar-panel";
@@ -24,6 +26,7 @@ import { useSyncPanelFromNode } from "@/hooks/use-sync-panel-from-node";
 import { saveWorkflowNow } from "@/lib/workflow-save";
 import { useRenderWebSocket } from "@/hooks/use-render-ws";
 import { useToast } from "@/hooks/use-toast";
+
 export default function EditorPage() {
   const params = useParams();
   const projectId = params.projectId as string;
@@ -59,9 +62,9 @@ export default function EditorPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen flex-col overflow-hidden bg-[hsl(220,20%,6%)]">
+      <div className="flex h-[100dvh] flex-col overflow-hidden bg-[hsl(220,20%,6%)]">
         <EditorHeader />
-        <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           <LeftSidebar />
           {showSidebarPanel ? (
             <EditorSidebarPanel
@@ -78,10 +81,14 @@ export default function EditorPage() {
                 </div>
                 <PromptBar workflowLoadState={workflowLoadState} />
               </div>
-              <RightPanel />
+              <div className="hidden lg:flex">
+                <RightPanel />
+              </div>
             </>
           )}
         </div>
+        <EditorMobileNav />
+        <EditorMobilePanel />
         <CommandPalette />
       </div>
     </ProtectedRoute>

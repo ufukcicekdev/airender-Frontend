@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Sparkles } from "lucide-react";
+import { AlertCircle, PanelRight, Sparkles } from "lucide-react";
 import { cn, formatCredits } from "@/lib/utils";
 import { SHOW_CREDITS_UI } from "@/lib/feature-flags";
 import { useAuthStore } from "@/store/auth-store";
@@ -15,7 +15,8 @@ interface PromptBarProps {
 }
 
 export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
-  const { bottomPrompt, setBottomPrompt, setSidebarSection } = useUIStore();
+  const { bottomPrompt, setBottomPrompt, setSidebarSection, setMobileRightPanelOpen } =
+    useUIStore();
   const user = useAuthStore((s) => s.user);
   const {
     executeMake,
@@ -46,7 +47,7 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
   const makeDisabled = projectLoading || !readiness.canMake;
 
   return (
-    <div className="shrink-0 border-t border-border/60 bg-[hsl(220,18%,8%)] px-4 py-3">
+    <div className="shrink-0 border-t border-border/60 bg-[hsl(220,18%,8%)] px-3 py-2.5 sm:px-4 sm:py-3">
       {projectLoading ? (
         <p className="mb-2 text-xs text-muted-foreground">Loading project…</p>
       ) : workflowLoadState === "error" ? (
@@ -108,13 +109,22 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
         </div>
       ) : null}
 
-      <div className="flex items-stretch gap-0 overflow-hidden rounded-lg border border-border/50 bg-[hsl(220,16%,11%)]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-0 sm:overflow-hidden sm:rounded-lg sm:border sm:border-border/50 sm:bg-[hsl(220,16%,11%)]">
+        <button
+          type="button"
+          title="Model & preview panel"
+          onClick={() => setMobileRightPanelOpen(true)}
+          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-border/50 bg-[hsl(220,16%,11%)] px-3 text-sm text-muted-foreground hover:text-foreground lg:hidden"
+        >
+          <PanelRight className="h-4 w-4" />
+          <span>{selectedModel?.name ?? "Select model"}</span>
+        </button>
         <input
           value={bottomPrompt}
           onChange={(e) => setBottomPrompt(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !makeDisabled && handleMake()}
           placeholder="Create photorealistic image"
-          className="min-h-[52px] flex-1 bg-transparent px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          className="min-h-[48px] flex-1 rounded-lg border border-border/50 bg-[hsl(220,16%,11%)] px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground sm:min-h-[52px] sm:rounded-none sm:border-0 sm:bg-transparent sm:px-4"
         />
         <button
           type="button"
@@ -136,10 +146,10 @@ export function PromptBar({ workflowLoadState = "idle" }: PromptBarProps) {
                       : "Run generation"
           }
           className={cn(
-            "flex min-w-[120px] flex-col items-center justify-center gap-1 px-5 transition-opacity",
+            "flex min-h-[48px] w-full flex-col items-center justify-center gap-1 px-4 transition-opacity sm:min-w-[120px] sm:w-auto sm:px-5",
             makeDisabled
-              ? "cursor-not-allowed bg-[hsl(var(--viz-cyan)/0.35)] text-[hsl(220,25%,6%)/0.7]"
-              : "bg-[hsl(var(--viz-cyan))] text-[hsl(220,25%,6%)] hover:opacity-90"
+              ? "cursor-not-allowed rounded-lg bg-[hsl(var(--viz-cyan)/0.35)] text-[hsl(220,25%,6%)/0.7] sm:rounded-none"
+              : "rounded-lg bg-[hsl(var(--viz-cyan))] text-[hsl(220,25%,6%)] hover:opacity-90 sm:rounded-none"
           )}
         >
           <span className="flex items-center gap-1.5 text-sm font-semibold">

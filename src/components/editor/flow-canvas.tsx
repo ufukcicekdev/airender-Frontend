@@ -20,6 +20,7 @@ import {
 import { createPaletteNode } from "@/lib/create-palette-node";
 import { repositionDraftPreviewForSource } from "@/lib/generation-nodes";
 import { useAssetUpload } from "@/hooks/use-asset-upload";
+import { useIsMobileEditor } from "@/hooks/use-mobile";
 import { useEditorStore } from "@/store/editor-store";
 import { useUIStore } from "@/store/ui-store";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ function CanvasInner() {
   const showCanvasDots = useUIStore((s) => s.showCanvasDots);
   const toggleCanvasDots = useUIStore((s) => s.toggleCanvasDots);
   const groupCreateSignal = useUIStore((s) => s.groupCreateSignal);
+  const isMobile = useIsMobileEditor();
   const { screenToFlowPosition } = useReactFlow();
   const { uploadFile, uploading } = useAssetUpload();
   const [isDraggingFile, setIsDraggingFile] = useState(false);
@@ -224,7 +226,9 @@ function CanvasInner() {
         edges={edges}
         connectionMode={ConnectionMode.Loose}
         connectionRadius={28}
-        selectionOnDrag
+        selectionOnDrag={!isMobile}
+        panOnDrag
+        zoomOnPinch
         multiSelectionKeyCode="Shift"
         edgesFocusable
         elevateEdgesOnSelect

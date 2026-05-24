@@ -74,6 +74,8 @@ interface UIState {
   drawTool: DrawTool;
   drawBrushSize: number;
   mediaWorkspaceExpanded: boolean;
+  /** Slide-over model/preview panel on mobile. */
+  mobileRightPanelOpen: boolean;
   /** True while a canvas node is being dragged — pauses panel↔node sync loops. */
   isCanvasDragging: boolean;
   /** Incremented to place a new group at viewport center (FlowCanvas). */
@@ -119,6 +121,7 @@ interface UIState {
   setDrawTool: (tool: DrawTool) => void;
   setDrawBrushSize: (size: number) => void;
   setMediaWorkspaceExpanded: (expanded: boolean) => void;
+  setMobileRightPanelOpen: (open: boolean) => void;
   setCanvasDragging: (dragging: boolean) => void;
 }
 
@@ -159,6 +162,7 @@ export const useUIStore = create<UIState>((set) => ({
   drawTool: "brush",
   drawBrushSize: 24,
   mediaWorkspaceExpanded: false,
+  mobileRightPanelOpen: false,
   isCanvasDragging: false,
   setSidebarSection: (sidebarSection) => set({ sidebarSection }),
   setPreviewTab: (previewTab) => set({ previewTab }),
@@ -209,6 +213,8 @@ export const useUIStore = create<UIState>((set) => ({
   setDrawBrushSize: (drawBrushSize) => set({ drawBrushSize }),
   setMediaWorkspaceExpanded: (mediaWorkspaceExpanded) =>
     set({ mediaWorkspaceExpanded }),
+  setMobileRightPanelOpen: (mobileRightPanelOpen) =>
+    set({ mobileRightPanelOpen }),
   setCanvasDragging: (isCanvasDragging) => set({ isCanvasDragging }),
   groupCreateSignal: 0,
   requestNewGroup: () =>
